@@ -107,7 +107,7 @@ uint8_t sensor_data[8]={0};
 // Variables for line_process
 
 uint8_t last_direction = 0;
-
+uint8_t try=0;
 
 
 
@@ -181,7 +181,7 @@ int main(void)
       {
           // Step 1: Read sensors
           if (CROSS>=1){
-         	 makeTurn(2);
+         	 makeTurn(4);
          	 CROSS=0;
           }
 
@@ -652,8 +652,19 @@ void makeTurn(uint8_t direction_x){
 		}
 
 
-	case 4:
-		;
+	case 4: //left turn
+		go(3,12);
+		go(6,11); //make a first turn
+		read_sensors();
+		while( lineNotFound){
+
+			go(1,11); // continue rotating until line found
+			read_sensors();  //update sensors
+			if (sensor_data[4] || sensor_data[0] || sensor_data[6]){
+				lineNotFound=0;
+				go(1,0);
+			}
+		}
 
 	default:
 		go(1,0);
@@ -737,7 +748,9 @@ uint8_t line_process() {
     // Default direction is STOP
     uint8_t direction = 0;
 
-    if (mid_line) {  // Middle sensor is on the line
+
+    if (mid_line) {
+    	try=0;// Middle sensor is on the line
         if (left_line && right_line) {
             // All sensors are active -> Stop
         	CROSS++;
@@ -772,26 +785,35 @@ uint8_t line_process() {
             helper[0] = 0;  // Reset guesses
             helper[1] = 0;  // Reset guesses
         } else if (!left_line && !right_line) {
+
+
+
             // All sensors are off -> Alternate based on helper
             if (last_direction == 2 && helper[1] == 0) {
                 direction = 2;  // Guess LEFT
                 go(1,2);
-
-
                 helper[1] = 1;  // Mark RIGHT as used
-            } else if (last_direction == 3 && helper[0] == 0) {
+            }
+
+             else if (last_direction == 3 && helper[0] == 0) {
                 direction = 3;  // Guess RIGHT
                 go(1,3);
-
-
-
                 helper[0] = 1;  // Mark LEFT as used
-            } else if (helper[0] == 1 && helper[1] == 1) {
+             }
+
+
+             else if (helper[0] == 1 && helper[1] == 1) {
                 // Both directions used -> Stop
                 direction = 0;  // STOP
                 helper[0] = 0;  // Reset guesses
                 helper[1] = 0;  // Reset guesses
+                go(1,4);
+                go(1,1);
             }
+
+
+
+
         } else {
             // Unexpected case: Default to STOP
             direction = 0;  // STOP
