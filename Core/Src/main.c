@@ -83,6 +83,7 @@ bool checkTimeout(void);
 
 
 //utility functions
+void makeTurn(uint8_t direction_x);
 void go(uint8_t max_x, uint8_t direction_x);
 void read_sensors();
 
@@ -179,6 +180,11 @@ int main(void)
       while (1)
       {
           // Step 1: Read sensors
+          if (CROSS>=1){
+         	 makeTurn(2);
+         	 CROSS=0;
+          }
+
           read_sensors();
 
           direction=line_process() ;
@@ -186,34 +192,6 @@ int main(void)
           //go( times , direction, duration)
           SendSingleValue(0x08, 128, direction);
 
-          /*
-          if (CROSS >= 1) {
-              rotated = 0;
-
-              go(5, 1);
-              go(4, 11);
-
-              while  (!line_found) {
-                      // Read the sensor data
-                  go(1, 11);         // Execute motion command
-
-                  DelayWithTimer(25); // Delay before the next cycle
-                  read_sensors();
-
-                  if (sensor_data[0] || sensor_data[4] || sensor_data[6]){
-                	  line_found=1;
-
-                  }
-
-                  DelayWithTimer(50);
-
-              }
-              CROSS = 0;
-          }
-
-
-           // 0x08 is the slave address
-*/
 
 
           DelayWithTimer(15); // Delay before the next cycle
@@ -619,13 +597,98 @@ bool checkTimeout(void) {
 //UTILITY FUNCTIONS
 
 void makeTurn(uint8_t direction_x){
-	//aliniaza cu centrul
-	go(2,1);
+	//aliniaza cu centrul intersectiei
+	/*
+	 *INPUT  DIRECTIONS MAP
+	 * 1-front
+	 * 2-right
+	 * 3-left
+	 * 4-back
+	 * 0-stop
+	 *
+	uint8_t left_line = sensor_data[0];
+    uint8_t mid_line = sensor_data[4];
+    uint8_t right_line = sensor_data[6];
+
+
+	 */
+
+	uint8_t lineNotFound=1;
+
+	switch(direction_x){
+
+	case 0:
+		go(1,0);
+	case 1: //front
+		//do nothing
+		go(1,1);
+	case 2: //right
+		go(2,1);
+		go(4,11); //make a first turn
+		read_sensors();
+		while(lineNotFound ){
+
+			go(1,11); // continue rotating until line found
+			read_sensors();  //update sensors
+			if (sensor_data[4] || sensor_data[0] || sensor_data[6]){
+				lineNotFound=0;
+				go(1,0);
+				return;
+			}
+		}
+
+	case 3: //left turn
+		go(2,1);
+		go(4,10); //make a first turn
+		read_sensors();
+		while( lineNotFound){
+
+			go(1,10); // continue rotating until line found
+			read_sensors();  //update sensors
+			if (sensor_data[4] || sensor_data[0] || sensor_data[6]){
+				lineNotFound=0;
+				go(1,0);
+			}
+		}
+
+
+	case 4:
+		;
+
+	default:
+		go(1,0);
 
 
 
-}
+	} //end of switch
+
+
+
+
+}//end of makeTurn()
+
+
+
 void go(uint8_t max_x, uint8_t direction_x){
+
+	/*  max_x-times  direction_x in direction x
+	 *  ARDUINO DIRECTIONS MAP , FOR GO() FUNCTION
+	 *  case 0: return "STOP";
+        case 1: return "FORWARD";
+        case 2: return "RIGHT";
+        case 3: return "LEFT";
+        case 4: return "SLIGHTLY RIGHT";
+        case 5: return "SLIGHTLY LEFT";
+        case 6: return "DIAGONAL RIGHT";
+        case 7: return "DIAGONAL LEFT";
+        case 8: return "HARD TURN LEFT";
+        case 9: return "HARD TURN RIGHT";
+        case 10: return "LEFT ROTATE";
+        case 11: return "RIGHT ROTATE";
+        case 12: return "BACKWARD";
+
+	 *
+	 */
 
 
 	for(uint8_t x=0 ;x< max_x; x++ ){
@@ -712,9 +775,16 @@ uint8_t line_process() {
             // All sensors are off -> Alternate based on helper
             if (last_direction == 2 && helper[1] == 0) {
                 direction = 2;  // Guess LEFT
+                go(1,2);
+
+
                 helper[1] = 1;  // Mark RIGHT as used
             } else if (last_direction == 3 && helper[0] == 0) {
                 direction = 3;  // Guess RIGHT
+                go(1,3);
+
+
+
                 helper[0] = 1;  // Mark LEFT as used
             } else if (helper[0] == 1 && helper[1] == 1) {
                 // Both directions used -> Stop
