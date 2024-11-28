@@ -107,7 +107,7 @@ uint8_t sensor_data[8]={0};
 // Variables for line_process
 
 uint8_t last_direction = 0;
-uint8_t try=0;
+
 
 
 
@@ -458,6 +458,12 @@ static void MX_GPIO_Init(void)
   LL_GPIO_ResetOutputPin(A_GPIO_Port, A_Pin);
 
   /**/
+  LL_GPIO_ResetOutputPin(signal_right_GPIO_Port, signal_right_Pin);
+
+  /**/
+  LL_GPIO_ResetOutputPin(signal_left_GPIO_Port, signal_left_Pin);
+
+  /**/
   GPIO_InitStruct.Pin = R_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
@@ -496,6 +502,22 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
   LL_GPIO_Init(A_GPIO_Port, &GPIO_InitStruct);
+
+  /**/
+  GPIO_InitStruct.Pin = signal_right_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
+  LL_GPIO_Init(signal_right_GPIO_Port, &GPIO_InitStruct);
+
+  /**/
+  GPIO_InitStruct.Pin = signal_left_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
+  LL_GPIO_Init(signal_left_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -750,7 +772,7 @@ uint8_t line_process() {
 
 
     if (mid_line) {
-    	try=0;// Middle sensor is on the line
+    	// Middle sensor is on the line
         if (left_line && right_line) {
             // All sensors are active -> Stop
         	CROSS++;
