@@ -40,7 +40,7 @@
 #define STOP    0x1
 
 
-#define TIMEOUT_DURATION 5000 // Define timeout duration for easy adjustment
+#define TIMEOUT_DURATION 3000 // Define timeout duration for easy adjustment
 
 /* USER CODE END PD */
 
@@ -125,12 +125,12 @@ uint8_t last_direction = 0;
 // Global variables
       // Array to hold sensor data
 uint8_t history[16];   // Array to hold DT values for Phase 2
-uint8_t history_index = 0;      // Index to keep track of history array
+uint8_t DTIndex = 0;      // Index to keep track of history array
 uint8_t phase = 0;              // Current phase: 0 - Init, 1 - Read Data
 uint8_t last_state_left = 0;    // Last state of the left sensor
 uint8_t last_state_right = 0;   // Last state of the right sensor
 uint8_t count_up = 0;           // Count up variable for conditions
-bool enough_data = false;       // Flag to indicate if enough data is collected
+uint8_t enough_data = 0;       // Flag to indicate if enough data is collected
 
 uint8_t CK_set=0;
 
@@ -150,6 +150,7 @@ int main(void)
 	uint8_t direction=0;
 	uint8_t way_to_go[4]= {3,1,4,2};
 	uint8_t index=0;
+	uint8_t copy_history[16]={0};
 
   /* USER CODE END 1 */
 
@@ -221,7 +222,46 @@ int main(void)
 
 
           data_process();
-          ProcessCollectedData();
+
+          if (enough_data){ // Exit if no data available
+        	  	 SetSensorRight(0);
+        	     SetSensorLeft(0);
+
+              // Process the data in the history array
+              for (uint8_t i = 0; i < DTIndex; i++) {
+
+             	 //copy_history[i]=history[i];
+
+             	 SetSensorRight(1);
+             	 SetSensorLeft(1);
+             	DelayWithTimer(500);
+             	SetSensorRight(0);
+             	 SetSensorLeft(0);
+             	DelayWithTimer(500);
+             	SetSensorRight(1);
+             	SetSensorLeft(1);
+             	DelayWithTimer(500);
+
+             	 if (history[i]==1){
+                	 SetSensorRight(0);
+                	 SetSensorLeft(1);
+                	 DelayWithTimer(500);
+                	 DelayWithTimer(500);
+             	 }
+             	 if (history[i]==0){
+                	 SetSensorRight(1);
+                	 SetSensorLeft(0);
+                	 DelayWithTimer(500);
+                	 DelayWithTimer(500);
+             	 }
+
+             	 SetSensorRight(0);
+             	 SetSensorLeft(0);
+              }
+              enough_data = 0;
+              }
+         // ProcessCollectedData();
+
 
 
 /*
@@ -244,13 +284,13 @@ int main(void)
 */
 
 
-/*
+
           direction=line_process() ;
            // Array of bytes to send via I2C
           //go( times , direction, duration)
-          SendSingleValue(0x08, 128, direction);
+          SendSingleValue(0x08, 160, direction);
 
-*/
+
 
           DelayWithTimer(15); // Delay before the next cycle
 
@@ -888,22 +928,20 @@ uint8_t line_process() {
 uint8_t lastStateCK=0;
 uint8_t lastStateDT=0;
 
-
+uint8_t clockChanged=0;
 
 void data_process() {
     // Attribute local names
     uint8_t data_left = sensor_data[3];
     uint8_t data_right = sensor_data[1];
+    clockChanged=0;
 
     // PHASE 0: INIT PHASE
     if (phase == 0) {
         // Check sensors
 
         // Reset data array for a fresh start
-        for (int i = 0; i < 16; i++) {
-            history[i] = 0;
-        }
-        history_index = 0;
+
 
 
 
@@ -939,6 +977,14 @@ void data_process() {
     		}
     		else if ((!checkTimeout() && count_up==2) && (*CK == 1 && *DT == 0) )
     		{
+
+    			  for (int i = 0; i < 16; i++) {
+    			            history[i] = 0;
+    			        }
+    			        DTIndex= 0;
+
+
+    			enough_data=0;
     			count_up++;
     		    lastStateCK= *CK;
     			lastStateDT= *DT;
@@ -968,13 +1014,34 @@ void data_process() {
         if (checkTimeout()) {
             phase = 0; // Timeout, reset phase
             count_up = 0;
-            history_index = 0;
+            DTIndex = 0;
             CK_set=0;
             return;
         }
 
         if (*CK != lastStateCK) {
             lastStateCK = *CK;
+            clockChanged=1;
+            Timeout(3000);
+
+        }
+
+        if (clockChanged && *CK==1){  // daca a existat o tranzitie si clock e high
+
+        	history[DTIndex]=*DT;
+        	DTIndex++;
+        }
+
+        else if(checkTimeout() &&  DTIndex>=4){
+
+        	enough_data=1;
+
+
+        }
+        else if (DTIndex>5){
+
+        	phase=0;
+			enough_data=1;
 
         }
 
@@ -998,23 +1065,31 @@ void ProcessCollectedData() {
     if (!enough_data) return; // Exit if no data available
 
     // Process the data in the history array
-    for (uint8_t i = 0; i < history_index; i++) {
+    SetSensorLeft(1);
+    for (uint8_t i = 0; i <= DTIndex; i++) {
+
         if (history[i] == 1) {
             SetSensorRight(1); // Blink LED HIGH for "1"
+            SetSensorLeft(0);
+            DelayWithTimer(500);
+
         } else {
             SetSensorRight(0); // Blink LED LOW for "0"
+            DelayWithTimer(500);
         }
 
-        // Delay between blinks
-        DelayWithTimer(500);
-    }
 
-    // Reset enough_data flag and history for the next cycle
-    enough_data = false;      // Data processing completed
-    history_index = 0;        // Reset history index
-    for (uint8_t i = 0; i < 16; i++) {
-        history[i] = 0;       // Clear the history array
+
+        // Delay between blinks
+        SetSensorLeft(0);
+        DelayWithTimer(500);
+
     }
+    SetSensorLeft(0);
+    // Reset enough_data flag and history for the next cycle
+   // enough_data = 0;      // Data processing completed
+            // Reset history index
+
 }
 
 
@@ -1087,9 +1162,9 @@ void endTimeout(void) {
 bool checkTimeout(void) {
 	//return false if timmer still active
 
-    //return (TIM16->CNT == 0 && !(TIM16->CR1 & TIM_CR1_CEN)); // CNT == 0 and timer is stopped
+    return (TIM16->CNT == 0 && !(TIM16->CR1 & TIM_CR1_CEN)); // CNT == 0 and timer is stopped
 
-    return false;
+    //return false;
 }
 
 
