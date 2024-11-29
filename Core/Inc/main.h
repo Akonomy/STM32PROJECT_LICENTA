@@ -84,10 +84,14 @@ void Error_Handler(void);
 #define B_GPIO_Port GPIOA
 #define A_Pin LL_GPIO_PIN_7
 #define A_GPIO_Port GPIOA
-#define signal_right_Pin LL_GPIO_PIN_13
+
+#define signal_right_Pin LL_GPIO_PIN_1
 #define signal_right_GPIO_Port GPIOA
-#define signal_left_Pin LL_GPIO_PIN_14
+#define signal_left_Pin LL_GPIO_PIN_4
 #define signal_left_GPIO_Port GPIOA
+
+
+
 #ifndef NVIC_PRIORITYGROUP_0
 #define NVIC_PRIORITYGROUP_0         ((uint32_t)0x00000007) /*!< 0 bit  for pre-emption priority,
                                                                  4 bits for subpriority */

@@ -39,6 +39,9 @@
 #define LEFT    0x4
 #define STOP    0x1
 
+
+#define TIMEOUT_DURATION 5000 // Define timeout duration for easy adjustment
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -87,13 +90,19 @@ void makeTurn(uint8_t direction_x);
 void go(uint8_t max_x, uint8_t direction_x);
 void read_sensors();
 
-uint8_t data_processor(uint8_t state_clk, uint8_t state_data);
+
 uint8_t line_process() ;
+void data_process();
+void ProcessCollectedData() ;
 
 
 //comunication functions
 void SendSingleValue(uint8_t slave_address, uint8_t index, uint16_t value);
 
+//signal settings
+void SetSensorRight(uint8_t state );
+
+void SetSensorLeft(uint8_t state );
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -113,17 +122,20 @@ uint8_t last_direction = 0;
 
 
 // Variables for data_processor
-bool timeout_active = false;
-uint8_t first_byte = 0;
-uint8_t data_read = 0;
-uint8_t last_clk_state = 0;
-bool _read_data = false;
-uint8_t PROCESSED_DATA[8] = {0};
-uint8_t tagged_clk = 0;  // Variable to identify tagged CLK
-uint8_t tagged_data = 0; // Variable to identify tagged DATA
+// Global variables
+      // Array to hold sensor data
+uint8_t history[16];   // Array to hold DT values for Phase 2
+uint8_t history_index = 0;      // Index to keep track of history array
+uint8_t phase = 0;              // Current phase: 0 - Init, 1 - Read Data
+uint8_t last_state_left = 0;    // Last state of the left sensor
+uint8_t last_state_right = 0;   // Last state of the right sensor
+uint8_t count_up = 0;           // Count up variable for conditions
+bool enough_data = false;       // Flag to indicate if enough data is collected
 
+uint8_t CK_set=0;
 
-
+static uint8_t* CK = NULL;  // Pointer to CK
+static uint8_t* DT = NULL; // Pointer to DT
 
 uint8_t CROSS=0;
 /* USER CODE END 0 */
@@ -136,6 +148,8 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	uint8_t direction=0;
+	uint8_t way_to_go[4]= {3,1,4,2};
+	uint8_t index=0;
 
   /* USER CODE END 1 */
 
@@ -146,7 +160,7 @@ int main(void)
   LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
   /* SysTick_IRQn interrupt configuration */
-  NVIC_SetPriority(SysTick_IRQn, 3);
+   NVIC_SetPriority(SysTick_IRQn, 3);
 
   /* USER CODE BEGIN Init */
 
@@ -180,19 +194,63 @@ int main(void)
       while (1)
       {
           // Step 1: Read sensors
+
+    	  /*
           if (CROSS>=1){
-         	 makeTurn(4);
+        	 //SetleftHigh();
+		  if(index>3){
+			  index=0;
+		  }
+
+
+
+         	 makeTurn(way_to_go[index]);
+
+
+         	 index++;
+
+
          	 CROSS=0;
+
+         	 //SetleftLow();
           }
 
+
+*/
           read_sensors();
 
+
+          data_process();
+          ProcessCollectedData();
+
+
+/*
+          if (sensor_data[1]) {
+         		      setSensorRight(1);
+         		  }
+          else if (!sensor_data[1]){
+           			   setSensorRight(0);
+           		  }
+
+          if (sensor_data[3]){
+         			   setSensorLeft(1);
+         		  }
+
+          else if (!sensor_data[3]){
+         			   setSensorLeft(0);
+         		  }
+
+
+*/
+
+
+/*
           direction=line_process() ;
            // Array of bytes to send via I2C
           //go( times , direction, duration)
           SendSingleValue(0x08, 128, direction);
 
-
+*/
 
           DelayWithTimer(15); // Delay before the next cycle
 
@@ -205,48 +263,6 @@ int main(void)
 
 
 
-
-  /*
-
-	  for(uint8_t code =0; code<8 ; code++){
-
-
-		  if (SetControlPins(code)) {
-
-			  //do nothing
-
-			  // Start ADC conversion
-			  ADC1->CR |= ADC_CR_ADSTART;
-
-			  // Wait for conversion to complete
-			  while (!(ADC1->ISR & ADC_ISR_EOC));
-
-			  // Read ADC value
-
-			  // Create binarry string: control pins + ADC input
-			  uint8_t adcValue = (ADC1->DR > 800) ? 1 : 0; // Read and process ADC value
-			  DelayWithTimer(300);
-
-
-		  }
-	  }
-
-
-	  USART_Send_Byte(usart_data);
-
-
-	  DelayWithTimer(500);
-
-
-	     I2C_Send_Buffer(i2c_slave_address, i2c_data, sizeof(i2c_data));
-
-
-
-
-
-	     DelayWithTimer(500);
-
-*/
 
     /* USER CODE BEGIN 3 */
 
@@ -504,20 +520,28 @@ static void MX_GPIO_Init(void)
   LL_GPIO_Init(A_GPIO_Port, &GPIO_InitStruct);
 
   /**/
+
+
   GPIO_InitStruct.Pin = signal_right_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(signal_right_GPIO_Port, &GPIO_InitStruct);
 
   /**/
+
+
+
+
   GPIO_InitStruct.Pin = signal_left_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(signal_left_GPIO_Port, &GPIO_InitStruct);
+
+
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -600,18 +624,6 @@ void binaryToHex(const char *binary, char *hex) {
 
 
 
-void Timeout(uint16_t timeout_ms) {
-    TIM16->CNT = timeout_ms;    // Set the counter to the desired value
-    TIM16->CR1 |= TIM_CR1_CEN;  // Start the counter
-}
-
-void endTimeout(void) {
-    TIM16->CR1 &= ~TIM_CR1_CEN; // Stop the counter
-}
-
-bool checkTimeout(void) {
-    return (TIM16->CNT == 0 && !(TIM16->CR1 & TIM_CR1_CEN)); // CNT == 0 and timer is stopped
-}
 
 
 
@@ -643,7 +655,8 @@ void makeTurn(uint8_t direction_x){
 		go(1,0);
 	case 1: //front
 		//do nothing
-		go(1,1);
+		go(2,1);
+		return;
 	case 2: //right
 		go(2,1);
 		go(4,11); //make a first turn
@@ -670,6 +683,7 @@ void makeTurn(uint8_t direction_x){
 			if (sensor_data[4] || sensor_data[0] || sensor_data[6]){
 				lineNotFound=0;
 				go(1,0);
+				return;
 			}
 		}
 
@@ -685,11 +699,13 @@ void makeTurn(uint8_t direction_x){
 			if (sensor_data[4] || sensor_data[0] || sensor_data[6]){
 				lineNotFound=0;
 				go(1,0);
+				return;
 			}
 		}
 
 	default:
 		go(1,0);
+		return;
 
 
 
@@ -866,67 +882,140 @@ uint8_t line_process() {
 
 
 
-uint8_t data_processor(uint8_t state_clk, uint8_t state_data) {
-    if (!timeout_active && (state_clk || state_data)) {
-        // Reset all previous states
-        first_byte = 1;
-        timeout_active = true;
-        data_read = 0;
-        _read_data = false;
 
-        if (state_clk == 2) {
-            tagged_data = 0x2; // Tag left as DATA
-            tagged_clk = 0x4;  // Tag right as CLK
-        } else if (state_clk == 4) {
-            tagged_data = 0x4; // Tag right as DATA
-            tagged_clk = 0x2;  // Tag left as CLK
+//move these at top
+
+uint8_t lastStateCK=0;
+uint8_t lastStateDT=0;
+
+
+
+void data_process() {
+    // Attribute local names
+    uint8_t data_left = sensor_data[3];
+    uint8_t data_right = sensor_data[1];
+
+    // PHASE 0: INIT PHASE
+    if (phase == 0) {
+        // Check sensors
+
+        // Reset data array for a fresh start
+        for (int i = 0; i < 16; i++) {
+            history[i] = 0;
         }
+        history_index = 0;
 
-        last_clk_state = tagged_clk;
-        Timeout(3000); // Ensure timeout starts properly
-        return 0; // Still processing
+
+
+    	//set a CK
+    	if(!CK_set){
+        if (data_left == 0 && data_right == 0) return; // None high
+        if (data_left == 1 && data_right == 1) return; // Both high
+
+        // Determine CK and DT
+
+         CK = (data_left == 1) ? &data_left : &data_right;
+         DT = (data_left == 0) ? &data_left : &data_right;
+
+
+        CK_set=1;
+
+    	}
+
+    	if (CK_set){
+    		if (count_up==0 && (*CK == 1 && *DT == 0) )
+    		{
+    			count_up++;
+    			Timeout(TIMEOUT_DURATION);
+    			return;
+
+    		}
+    		else if ((!checkTimeout() && count_up==1) && (*CK == 0 && *DT == 0) )
+    		{
+    			count_up++;
+    			Timeout(TIMEOUT_DURATION);
+    			return;
+
+    		}
+    		else if ((!checkTimeout() && count_up==2) && (*CK == 1 && *DT == 0) )
+    		{
+    			count_up++;
+    		    lastStateCK= *CK;
+    			lastStateDT= *DT;
+    			phase++;
+    			Timeout(TIMEOUT_DURATION);
+    			return;
+
+    		}
+    		else if (checkTimeout() || *DT == 1 ){
+    		count_up=0;
+    		CK_set=0;
+    		phase=0;
+
+    		}
+
+    	} //end if ck_set
+
+
     }
 
-    if (timeout_active && first_byte <= 3) {
-        if (state_clk != last_clk_state) {
-            first_byte++;
-            last_clk_state = state_clk;
-            Timeout(3000); // Timeout reset for every CLK change
-            return 0; // Still processing
+
+
+    // PHASE 1: READ DATA
+    if (phase == 1) {
+
+
+        if (checkTimeout()) {
+            phase = 0; // Timeout, reset phase
+            count_up = 0;
+            history_index = 0;
+            CK_set=0;
+            return;
         }
+
+        if (*CK != lastStateCK) {
+            lastStateCK = *CK;
+
+        }
+
+
+
+
+
+
     }
 
-    if (timeout_active && first_byte > 3) {
-        if (data_read <= 7) {
-            if (state_clk && !_read_data) {
-                _read_data = true;
-                PROCESSED_DATA[data_read] = tagged_data; // Append data
-                data_read++;
-                Timeout(3000); // Reset timeout after saving data
-                return 0; // Still processing
-            }
 
-            if (!state_clk) {
-                _read_data = false;
-                Timeout(3000); // Reset timeout after processing CLK low
-                return 0; // Still processing
-            }
+
+} //end void
+
+
+
+
+
+void ProcessCollectedData() {
+    // Check if enough data is available
+    if (!enough_data) return; // Exit if no data available
+
+    // Process the data in the history array
+    for (uint8_t i = 0; i < history_index; i++) {
+        if (history[i] == 1) {
+            SetSensorRight(1); // Blink LED HIGH for "1"
+        } else {
+            SetSensorRight(0); // Blink LED LOW for "0"
         }
 
-        if (data_read > 7) {
-            timeout_active = false;
-            first_byte = 0;
-            Timeout(3000); // Final reset before exiting
-            return 1; // Processing complete
-        }
+        // Delay between blinks
+        DelayWithTimer(500);
     }
 
-    return 0; // Default: still processing
+    // Reset enough_data flag and history for the next cycle
+    enough_data = false;      // Data processing completed
+    history_index = 0;        // Reset history index
+    for (uint8_t i = 0; i < 16; i++) {
+        history[i] = 0;       // Clear the history array
+    }
 }
-
-
-
-
 
 
 
@@ -953,8 +1042,55 @@ void SendSingleValue(uint8_t slave_address, uint8_t index, uint16_t value) {
 }
 
 
+void SetSensorRight(uint8_t state) {
+    if (state) {
+        signal_right_GPIO_Port->BSRR = signal_right_Pin; // Set pin high
+    } else {
+        signal_right_GPIO_Port->BSRR = (uint32_t)signal_right_Pin << 16U; // Reset pin low
+    }
+}
+
+void SetSensorLeft(uint8_t state) {
+    if (state) {
+        signal_left_GPIO_Port->BSRR = signal_left_Pin; // Set pin high
+    } else {
+        signal_left_GPIO_Port->BSRR = (uint32_t)signal_left_Pin << 16U; // Reset pin low
+    }
+}
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void Timeout(uint16_t timeout_ms) {
+    TIM16->CNT = timeout_ms;    // Set the counter to the desired value
+    TIM16->CR1 |= TIM_CR1_CEN;  // Start the counter
+}
+
+void endTimeout(void) {
+    TIM16->CR1 &= ~TIM_CR1_CEN; // Stop the counter
+}
+
+bool checkTimeout(void) {
+	//return false if timmer still active
+
+    //return (TIM16->CNT == 0 && !(TIM16->CR1 & TIM_CR1_CEN)); // CNT == 0 and timer is stopped
+
+    return false;
+}
 
 
 /* USER CODE END 4 */
