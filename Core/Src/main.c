@@ -138,6 +138,10 @@ static uint8_t* CK = NULL;  // Pointer to CK
 static uint8_t* DT = NULL; // Pointer to DT
 
 uint8_t CROSS=0;
+
+
+
+uint8_t speed =0 ;
 /* USER CODE END 0 */
 
 /**
@@ -288,7 +292,13 @@ int main(void)
           direction=line_process() ;
            // Array of bytes to send via I2C
           //go( times , direction, duration)
-          SendSingleValue(0x08, 160, direction);
+
+          if (CK_set && direction==1){
+        	  speed=170;
+          }else{
+        	  speed=128;
+          }
+          SendSingleValue(0x08, speed, direction);
 
 
 
@@ -499,10 +509,7 @@ static void MX_GPIO_Init(void)
   LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
 
   /**/
-  LL_GPIO_ResetOutputPin(R_GPIO_Port, R_Pin);
 
-  /**/
-  LL_GPIO_ResetOutputPin(L_GPIO_Port, L_Pin);
 
   /**/
   LL_GPIO_ResetOutputPin(C_GPIO_Port, C_Pin);
@@ -520,20 +527,7 @@ static void MX_GPIO_Init(void)
   LL_GPIO_ResetOutputPin(signal_left_GPIO_Port, signal_left_Pin);
 
   /**/
-  GPIO_InitStruct.Pin = R_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
-  LL_GPIO_Init(R_GPIO_Port, &GPIO_InitStruct);
 
-  /**/
-  GPIO_InitStruct.Pin = L_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_DOWN;
-  LL_GPIO_Init(L_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = C_Pin;
