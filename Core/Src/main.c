@@ -42,6 +42,9 @@
 
 #define TIMEOUT_DURATION 3000 // Define timeout duration for easy adjustment
 
+
+#define BUFFER_SIZE 256
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -97,12 +100,19 @@ void ProcessCollectedData() ;
 
 
 //comunication functions
+void USART_Check_And_Confirm();
 void SendSingleValue(uint8_t slave_address, uint8_t index, uint16_t value);
+void ProcessReceivedData(uint8_t *buffer, uint16_t length);
+void USART_Send_Array(uint8_t *data, uint16_t length);
+uint16_t USART_Receive_Array(uint8_t *buffer, uint16_t buffer_size);
+
 
 //signal settings
 void SetSensorRight(uint8_t state );
-
 void SetSensorLeft(uint8_t state );
+
+
+void ProcessReceivedData(uint8_t *buffer, uint16_t length);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -124,7 +134,7 @@ uint8_t last_direction = 0;
 // Variables for data_processor
 // Global variables
       // Array to hold sensor data
-uint8_t history[16];   // Array to hold DT values for Phase 2
+uint8_t history[8];   // Array to hold DT values for Phase 2
 uint8_t DTIndex = 0;      // Index to keep track of history array
 uint8_t phase = 0;              // Current phase: 0 - Init, 1 - Read Data
 uint8_t last_state_left = 0;    // Last state of the left sensor
@@ -142,6 +152,17 @@ uint8_t CROSS=0;
 
 
 uint8_t speed =0 ;
+
+
+
+//com variables usart
+
+
+uint8_t receive_buffer[BUFFER_SIZE];
+uint16_t bytes_received;
+
+
+
 /* USER CODE END 0 */
 
 /**
@@ -228,40 +249,23 @@ int main(void)
           data_process();
 
           if (enough_data){ // Exit if no data available
-        	  	 SetSensorRight(0);
-        	     SetSensorLeft(0);
+        	  	 SetSensorRight(1);
+        	     SetSensorLeft(1);
 
               // Process the data in the history array
-              for (uint8_t i = 0; i < DTIndex; i++) {
+        	  USART_Send_Array(history, DTIndex);
+        	  Timeout(5000);
+        	  while(!checkTimeout()){
 
-             	 //copy_history[i]=history[i];
+        		  USART_Check_And_Confirm();
 
-             	 SetSensorRight(1);
-             	 SetSensorLeft(1);
-             	DelayWithTimer(500);
-             	SetSensorRight(0);
-             	 SetSensorLeft(0);
-             	DelayWithTimer(500);
-             	SetSensorRight(1);
-             	SetSensorLeft(1);
-             	DelayWithTimer(500);
+        	  }
+        	  endTimeout();
 
-             	 if (history[i]==1){
-                	 SetSensorRight(0);
-                	 SetSensorLeft(1);
-                	 DelayWithTimer(500);
-                	 DelayWithTimer(500);
-             	 }
-             	 if (history[i]==0){
-                	 SetSensorRight(1);
-                	 SetSensorLeft(0);
-                	 DelayWithTimer(500);
-                	 DelayWithTimer(500);
-             	 }
 
-             	 SetSensorRight(0);
-             	 SetSensorLeft(0);
-              }
+
+     	  	 SetSensorRight(0);
+     	     SetSensorLeft(0);
               enough_data = 0;
               }
          // ProcessCollectedData();
@@ -294,7 +298,7 @@ int main(void)
           //go( times , direction, duration)
 
           if (CK_set && direction==1){
-        	  speed=170;
+        	  speed=180;
           }else{
         	  speed=128;
           }
@@ -1026,13 +1030,13 @@ void data_process() {
         	DTIndex++;
         }
 
-        else if(checkTimeout() &&  DTIndex>=4){
+        else if(checkTimeout() &&  DTIndex>=3){
 
         	enough_data=1;
 
 
         }
-        else if (DTIndex>5){
+        else if (DTIndex>4){
 
         	phase=0;
 			enough_data=1;
@@ -1101,6 +1105,10 @@ void toBinaryString(uint8_t value, char *binary_string)
 
 //COMUNICATION FUNCTIONS
 
+
+
+
+
 void SendSingleValue(uint8_t slave_address, uint8_t index, uint16_t value) {
     uint8_t buffer[3];
     buffer[0] = index;               // Index
@@ -1110,6 +1118,83 @@ void SendSingleValue(uint8_t slave_address, uint8_t index, uint16_t value) {
     I2C_Send_Buffer(slave_address, buffer, sizeof(buffer)); // Send single value
 }
 
+
+
+void USART_Check_And_Confirm()
+{
+
+    /* Receive data from USART */
+    bytes_received = USART_Receive_Array(receive_buffer, BUFFER_SIZE);
+
+    /* If data is received, send a confirmation message */
+    if (bytes_received > 0)
+    {
+        /* Example confirmation message */
+        uint8_t confirm_message[] = "YES\n";
+        USART_Send_Array(confirm_message, sizeof(confirm_message) - 1);
+
+        ProcessReceivedData(receive_buffer, bytes_received);
+
+
+
+    }
+}
+
+/* Function to send an array of data */
+void USART_Send_Array(uint8_t *data, uint16_t length)
+{
+    for (uint16_t i = 0; i < length; i++)
+    {
+        /* Wait until TXE (Transmit Data Register Empty) is set */
+        while (!(USART1->ISR & USART_ISR_TXE));
+
+        /* Send the data */
+        USART1->TDR = data[i];
+    }
+
+    /* Wait until TC (Transmission Complete) is set for the last byte */
+    while (!(USART1->ISR & USART_ISR_TC));
+}
+
+/* Function to receive an array of data */
+uint16_t USART_Receive_Array(uint8_t *buffer, uint16_t buffer_size)
+{
+    uint16_t count = 0;
+
+    while (count < buffer_size)
+    {
+        /* Wait until RXNE (Receive Data Register Not Empty) is set */
+        if (USART1->ISR & USART_ISR_RXNE)
+        {
+            /* Read the received data */
+            buffer[count++] = USART1->RDR;
+
+            /* Optional: Break on specific termination condition, e.g., newline */
+            if (buffer[count - 1] == '\n')
+            {
+                break;
+            }
+        }
+        else
+        {
+            /* Timeout or other mechanism to avoid infinite loop */
+            break;
+        }
+    }
+
+    return count;  // Return the number of bytes received
+}
+
+
+
+
+
+
+
+
+
+
+//SINGAL FUNCTIONS
 
 void SetSensorRight(uint8_t state) {
     if (state) {
@@ -1132,6 +1217,47 @@ void SetSensorLeft(uint8_t state) {
 
 
 
+
+//test signals
+
+void ProcessReceivedData(uint8_t *buffer, uint16_t length)
+{
+    for (uint16_t i = 0; i < length; i++)
+    {
+        // Example: Simulate initial sensor state
+        SetSensorRight(1);
+        SetSensorLeft(1);
+        DelayWithTimer(500);
+
+        SetSensorRight(0);
+        SetSensorLeft(0);
+        DelayWithTimer(500);
+
+        SetSensorRight(1);
+        SetSensorLeft(1);
+        DelayWithTimer(500);
+
+        // Process each byte in the buffer
+        if (buffer[i] == 1)
+        {
+            SetSensorRight(0);
+            SetSensorLeft(1);
+            DelayWithTimer(500);
+            DelayWithTimer(500);
+        }
+        else if (buffer[i] == 0)
+        {
+            SetSensorRight(1);
+            SetSensorLeft(0);
+            DelayWithTimer(500);
+            DelayWithTimer(500);
+        }
+
+        // Reset sensors to default state
+        SetSensorRight(0);
+        SetSensorLeft(0);
+    }
+}
 
 
 
