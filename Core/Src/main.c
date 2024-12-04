@@ -92,6 +92,10 @@ void read_sensors();
 // LINE AND DATA PROCESSING
 uint8_t line_process();
 void data_process();
+void rasp_process();
+
+void raspberry_control();
+
 void ProcessCollectedData();
 
 // MOVEMENT FUNCTIONS
@@ -145,7 +149,8 @@ static uint8_t *DT = NULL;         // Pointer to DT (data)
 uint8_t speed = 135;               // Speed value for movement control
 
 // COMMUNICATION VARIABLES
-
+uint8_t headTo =0;
+uint8_t rasp_control=0;
 
 
 
@@ -205,29 +210,16 @@ int main(void) {
 	while (1) {
 		// Step 1: Read sensors
 
-		/*
+
 		 if (CROSS>=1){
 		 //SetleftHigh();
-		 if(index>3){
-		 index=0;
-		 }
-
-
-
-		 makeTurn(way_to_go[index]);
-
-
-		 index++;
-
-
+		 makeTurn(headTo);
+		 headTo=0;
 		 CROSS=0;
-
 		 //SetleftLow();
 		 }
 
-		 */
 		read_sensors();
-
 		data_process();
 
 		if (enough_data) { // Exit if no data available
@@ -245,33 +237,13 @@ int main(void) {
 
 			enough_data = 0;
 
-
-
-			uint8_t value1 = 0, value2 = 0;
-			char response[20]; // Buffer for the response string
-
-			while (1) {
-			    if (USART_Receive_Two_Values(&value1, &value2)) {
-			        // Successfully received and parsed two values
-			       // printf("Value1: %d, Value2: %d\n", value1, value2);
-
-			        // Format the values into a string as "value1_value2"
-			        snprintf(response, sizeof(response), "%d_%d\n", value1, value2);
-
-			        // Send the response string back to the Raspberry Pi
-			        USART_Send_String(response);
-
-			        break; // Exit the loop after successful processing
-			    } else {
-			        // Optional: Add a small delay to avoid busy-waiting
-			        DelayWithTimer(50); // Adjust delay as needed
-			    }
-			}
-
-
+			rasp_process();
 		}
 
 
+		if(rasp_control){
+			raspberry_control();
+			}
 
 
 		/*ARDUINO COMUNICATION ZONE DON"T TOUCH */
@@ -981,8 +953,108 @@ void data_process() {
 
 } //end void
 
+//to move global
 
 
+void rasp_process(){
+
+	uint8_t value1 = 0, value2 = 0;
+	char response[20]; // Buffer for the response string
+
+	while (value1==0) {
+		if (USART_Receive_Two_Values(&value1, &value2)) {
+
+			/*Confirmation, on rasp side if not sent in 2 sec another cmd will arrive*/
+			// Format the values into a string as "value1_value2"
+			snprintf(response, sizeof(response), "%d_%d\n", value1, value2);
+			// Send the response string back to the Raspberry Pi
+			USART_Send_String(response);
+
+
+			if(value1==254){
+
+				switch(value2){
+
+				case 1:
+					headTo=1;
+					break;
+				case 2:
+					headTo=2;
+					break;
+				case 3:
+					headTo=3;
+					break;
+				case 4:
+					headTo=4;
+					break;
+
+				default:
+					headTo=0;
+					break;
+				}
+
+
+			}else if(value1==200){
+
+				rasp_control=1;  //pentru a intra in modul de a fi controlat de raspberry py ignorand celelalte comenzi
+				break;
+
+			}
+
+
+	}else {
+		   // Optional: Add a small delay to avoid busy-waiting
+			DelayWithTimer(50); // Adjust delay as needed
+		 }
+
+
+
+}//end while
+
+}//end function
+
+void raspberry_control(){
+
+	uint8_t value1 = 0, value2 = 0;
+	char response[20]; // Buffer for the response string
+
+
+	snprintf(response, sizeof(response), "413\n");
+				// Send the response string back to the Raspberry Pi
+	USART_Send_String(response);
+
+	while(rasp_control){
+		if (USART_Receive_Two_Values(&value1, &value2)) {
+
+			if(value1==200){
+					rasp_control=0;
+					SetSensorRight(0);
+					SetSensorLeft(0);
+					break;
+				}
+
+			if(value1<10 && value2<20){
+			go(value1,value2);
+
+			}
+
+
+			else{
+				snprintf(response, sizeof(response), "207\n");
+							// Send the response string back to the Raspberry Pi
+				USART_Send_String(response);
+			}
+		}
+		else{
+			DelayWithTimer(5);
+		}
+
+
+	}
+
+
+
+}
 void toBinaryString(uint8_t value, char *binary_string) {
 	for (int i = 7; i >= 0; i--) {
 		binary_string[7 - i] = (value & (1 << i)) ? '1' : '0';
