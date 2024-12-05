@@ -101,6 +101,8 @@ void ProcessCollectedData();
 // MOVEMENT FUNCTIONS
 void makeTurn(uint8_t direction_x);
 void go(uint8_t max_x, uint8_t direction_x);
+void go_servo(uint8_t servo, uint8_t position);
+
 
 // TIMEOUT FUNCTIONS
 void Timeout(uint16_t timeout_ms);
@@ -149,7 +151,7 @@ static uint8_t *DT = NULL;         // Pointer to DT (data)
 uint8_t speed = 135;               // Speed value for movement control
 
 // COMMUNICATION VARIABLES
-uint8_t headTo =0;
+uint8_t headTo =4;  //default back
 uint8_t rasp_control=0;
 
 
@@ -214,7 +216,7 @@ int main(void) {
 		 if (CROSS>=1){
 		 //SetleftHigh();
 		 makeTurn(headTo);
-		 headTo=0;
+		 headTo=4;
 		 CROSS=0;
 		 //SetleftLow();
 		 }
@@ -711,6 +713,23 @@ void go(uint8_t max_x, uint8_t direction_x) {
 
 }
 
+
+
+void go_servo(uint8_t servo, uint8_t position) {
+/*
+	 case 300: return "SERVO BAZA";
+	 case 301: return "SERVO BRAT";
+	 case 302: return "SERVO CLAW";
+
+*/
+
+		SendSingleValue(0x08, servo, position);
+		DelayWithTimer(10);
+
+}
+
+
+
 void read_sensors() {
 	for (uint8_t code = 0; code < 8; code++) {
 		if (SetControlPins(code)) {
@@ -1002,6 +1021,8 @@ void rasp_process(){
 			}
 
 
+
+
 	}else {
 		   // Optional: Add a small delay to avoid busy-waiting
 			DelayWithTimer(50); // Adjust delay as needed
@@ -1013,48 +1034,64 @@ void rasp_process(){
 
 }//end function
 
-void raspberry_control(){
+void raspberry_control() {
 
 	uint8_t value1 = 0, value2 = 0;
 	char response[20]; // Buffer for the response string
 
-
 	snprintf(response, sizeof(response), "413\n");
-				// Send the response string back to the Raspberry Pi
+	// Send the response string back to the Raspberry Pi
 	USART_Send_String(response);
 
-	while(rasp_control){
+	while (rasp_control) {
 		if (USART_Receive_Two_Values(&value1, &value2)) {
 
-			if(value1==200){
-					rasp_control=0;
-					SetSensorRight(0);
-					SetSensorLeft(0);
-					break;
-				}
+			if (value1 == 200) {
+				rasp_control = 0;
+				SetSensorRight(0);
+				SetSensorLeft(0);
+				break;
+			}
 
-			if(value1<10 && value2<20){
-			go(value1,value2);
+			else if (value1 > 299 && value1<307) {
+				go_servo(value1, value2);
 
 			}
 
+			else if (value1 < 10 && value2 < 20) {
+				go(value1, value2);
 
-			else{
+			}
+
+			else if (value1 == 400) {
+				read_sensors();
+
+				char result[50]; // Ensure this buffer is large enough
+				memset(result, 0, sizeof(result)); // Initialize buffer to 0
+				// Convert array to space-separated string
+				convert_array_to_string(sensor_data, 8, result, sizeof(result));
+
+				USART_Send_String(result);
+
+			}
+
+			else {
 				snprintf(response, sizeof(response), "207\n");
-							// Send the response string back to the Raspberry Pi
+				// Send the response string back to the Raspberry Pi
 				USART_Send_String(response);
+				SetSensorRight(0);
+
 			}
-		}
-		else{
+		} else {
 			DelayWithTimer(5);
 		}
 
-
 	}
 
-
-
 }
+
+
+
 void toBinaryString(uint8_t value, char *binary_string) {
 	for (int i = 7; i >= 0; i--) {
 		binary_string[7 - i] = (value & (1 << i)) ? '1' : '0';
