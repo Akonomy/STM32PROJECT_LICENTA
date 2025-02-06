@@ -13,6 +13,8 @@
 #include "usart.h"
 #include <string.h> // For memset, strncpy, etc.
 #include <stdlib.h> // For atoi
+#include "globals.h"
+
 
 // Global variables
 uint8_t receive_buffer[BUFFER_SIZE]; // Buffer for received data
@@ -112,4 +114,76 @@ void USART_Send_String(const char *str) {
  * @param buffer Pointer to the received data buffer.
  * @param length Length of the received data.
  */
+
+
+
+
+
+
+/**
+ * @brief Receives data from USART and parses up to max_values uint8_t values.
+ *
+ * This function reads characters from USART until a newline ('\n') is encountered
+ * or until the buffer is full. It then tokenizes the received string by spaces and
+ * converts each token into a uint8_t value. The number of tokens parsed may be less
+ * than max_values (e.g., 2, 3, or 4 values), depending on the input.
+ *
+ * @param values Pointer to an array where parsed values will be stored.
+ * @param max_values Maximum number of values to parse (for example, 5).
+ * @return The number of values successfully parsed, or -1 if no data was received.
+ */
+int USART_Receive_Values(uint16_t *values, uint8_t max_values) {
+    char buffer[BUFFER_SIZE] = {0}; // Temporary buffer for received string
+    uint16_t count = 0;
+
+    // Receive characters until newline is encountered or the buffer is full.
+    while (count < BUFFER_SIZE) {
+        if (USART1->ISR & USART_ISR_RXNE) { // Check if RXNE flag is set
+            char received_char = (char)USART1->RDR; // Read the received character
+            if (received_char == '\n') { // End of message detected
+                buffer[count] = '\0'; // Null-terminate the string
+                break;
+            }
+            buffer[count++] = received_char;
+        }
+    }
+
+    if (count == 0) {
+        return -1; // No data received
+    }
+
+    // Tokenize the string using space as the delimiter.
+    int token_count = 0;
+    char *token = strtok(buffer, " ");
+    while (token != NULL && token_count < max_values) {
+        values[token_count] = (uint16_t)atoi(token);  // Convert to uint16_t instead of uint8_t
+        token_count++;
+        token = strtok(NULL, " ");
+    }
+
+    return token_count;
+}
+
+
+
+void RingBuffer_Put(uint8_t data)
+{
+    rxBuffer[rxWriteIndex] = data;
+    rxWriteIndex = (rxWriteIndex + 1) % RX_BUFFER_SIZE;
+    // Optionally handle overflow: if writeIndex catches up to readIndex.
+}
+
+uint16_t RingBuffer_Available(void)
+{
+    if (rxWriteIndex >= rxReadIndex)
+        return rxWriteIndex - rxReadIndex;
+    else
+        return RX_BUFFER_SIZE - rxReadIndex + rxWriteIndex;
+}
+
+
+
+
+
+
 

@@ -22,6 +22,11 @@
 #include "stm32f0xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+
+#include "globals.h"
+#include "usart.h"
+#include "sensors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -153,6 +158,36 @@ void I2C1_IRQHandler(void)
   /* USER CODE END I2C1_IRQn 1 */
 }
 
+/**
+  * @brief This function handles USART1 global interrupt.
+  */
+#define EMERGENCY_CODE 65
+uint8_t usart_data = 0x9;
+
+
+void USART1_IRQHandler(void)
+{
+    /* USER CODE BEGIN USART1_IRQn 0 */
+    if (USART1->ISR & USART_ISR_RXNE)
+    {
+        uint8_t data = (uint8_t)(USART1->RDR & 0xFF);
+
+        // Store the received data in the ring buffer regardless.
+        RingBuffer_Put(data);
+        newDataFlag = 1;
+
+        // Additionally, if the received byte is the emergency code, set the emergency flag.
+        if (data == EMERGENCY_CODE)
+        {
+        	SetSensorLeft(1);
+        	SetSensorRight(0);
+            emergency_flag = 1;
+        }
+    }
+    /* USER CODE END USART1_IRQn 0 */
+    /* USER CODE BEGIN USART1_IRQn 1 */
+    /* USER CODE END USART1_IRQn 1 */
+}
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */

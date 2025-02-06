@@ -25,4 +25,14 @@ void USART_Check_And_Confirm(void);
 void USART_Send_String(const char *str);
 
 
+int USART_Receive_Values(uint16_t *values, uint8_t max_values);
+
+
+
+void RingBuffer_Put(uint8_t data);
+uint16_t RingBuffer_Available(void);
+void ProcessMessage(void);
+
+
+
 #endif // USART_H

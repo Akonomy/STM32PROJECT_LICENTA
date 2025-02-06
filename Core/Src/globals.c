@@ -35,3 +35,18 @@ uint8_t helper[2] = {0, 0};
 uint8_t lastStateCK = 0;
 uint8_t lastStateDT = 0;
 uint8_t clockChanged = 0;
+
+
+
+
+
+
+volatile uint8_t rxBuffer[RX_BUFFER_SIZE] = {0};
+volatile uint16_t rxWriteIndex = 0;
+volatile uint16_t rxReadIndex = 0;
+
+
+
+volatile uint8_t newDataFlag = 0;    // Set if any new data is received
+volatile uint8_t emergency_flag = 0; // Set if an emergency code is received
+

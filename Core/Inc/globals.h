@@ -16,6 +16,10 @@ extern uint8_t headTo;           // Direcția pentru viraj (default back)
 extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
 
 #define TIMEOUT_DURATION 100
+#define RX_BUFFER_SIZE 256
+
+
+
 
 extern uint8_t last_state_left;
 extern uint8_t last_state_right;
@@ -35,5 +39,17 @@ extern uint8_t helper[2];
 extern uint8_t lastStateCK;
 extern uint8_t lastStateDT;
 extern uint8_t clockChanged;
+
+
+
+extern volatile uint8_t rxBuffer[RX_BUFFER_SIZE];
+extern volatile uint16_t rxWriteIndex;
+extern volatile uint16_t rxReadIndex;
+
+
+extern volatile uint8_t newDataFlag;  // Flag set by ISR when new data arrives
+extern volatile uint8_t emergency_flag; // Set if an emergency code is received
+
+
 
 #endif /* INC_GLOBALS_H_ */

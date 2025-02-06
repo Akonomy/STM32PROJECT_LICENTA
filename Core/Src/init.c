@@ -215,24 +215,32 @@ void MX_TIM16_Init(void) {
 }
 
 void MX_USART1_UART_Init(void)
-
 {
-	// Enable clock for USART1 and GPIOA
-	RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
-	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+    // Enable clock for USART1 and GPIOA
+    RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+    RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
 
-	// Configure GPIOA: PA2 (TX) as Alternate Function
-	GPIOA->MODER &= ~(3U << (2 * 2));  // Clear MODER for PA2
-	GPIOA->MODER |= (2U << (2 * 2));   // Set MODER to Alternate Function
-	GPIOA->AFR[0] |= (1U << (4 * 2));  // Set AF1 (USART1_TX) for PA2
+    // Configure GPIOA: PA2 (TX) as Alternate Function
+    GPIOA->MODER &= ~(3U << (2 * 2));  // Clear MODER for PA2
+    GPIOA->MODER |= (2U << (2 * 2));   // Set MODER to Alternate Function
+    GPIOA->AFR[0] |= (1U << (4 * 2));  // Set AF1 (USART1_TX) for PA2
 
-	// Configure GPIOA: PA3 (RX) as Alternate Function
-	GPIOA->MODER &= ~(3U << (3 * 2));  // Clear MODER for PA3
-	GPIOA->MODER |= (2U << (3 * 2));   // Set MODER to Alternate Function
-	GPIOA->AFR[0] |= (1U << (4 * 3));  // Set AF1 (USART1_RX) for PA3
+    // Configure GPIOA: PA3 (RX) as Alternate Function
+    GPIOA->MODER &= ~(3U << (3 * 2));  // Clear MODER for PA3
+    GPIOA->MODER |= (2U << (3 * 2));   // Set MODER to Alternate Function
+    GPIOA->AFR[0] |= (1U << (4 * 3));  // Set AF1 (USART1_RX) for PA3
 
-	// Configure USART1: 9600 baud, 8N1 (1 stop bit, no parity)
-	USART1->BRR = 8000000 / 38400; // Assuming 48 MHz clock
-	USART1->CR1 = USART_CR1_TE | USART_CR1_RE; // Enable Transmitter and Receiver
-	USART1->CR1 |= USART_CR1_UE;               // Enable USART
+    // Configure USART1: set baud rate, word length, stop bits, etc.
+    // For example, assuming an 8 MHz clock and a desired baud rate of 38400:
+    USART1->BRR = 8000000 / 38400;
+
+    // Enable transmitter, receiver, and receive interrupt (RXNEIE)
+    USART1->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_RXNEIE;
+
+    // Enable USART1
+    USART1->CR1 |= USART_CR1_UE;
+
+    // Configure NVIC for USART1 interrupt: set priority and enable the IRQ
+    NVIC_SetPriority(USART1_IRQn, 0);
+    NVIC_EnableIRQ(USART1_IRQn);
 }

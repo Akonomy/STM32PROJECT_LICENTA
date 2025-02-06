@@ -38,7 +38,7 @@
 #define BUFFER_SIZE 256
 
 /* Private variables ---------------------------------------------------------*/
-uint8_t usart_data = 0x9;           // Exemplu de variabilă pentru USART
+        // Exemplu de variabilă pentru USART
 uint8_t i2c_slave_address = 0x08;    // Adresa I2C a sclavului
 
 /* Main ----------------------------------------------------------------------*/
@@ -71,6 +71,88 @@ int main(void)
     /* Infinite loop */
     while (1)
     {
+
+
+
+    	if (emergency_flag)
+    	        {
+    	            // Send back "413\n" immediately.
+    	            USART_Send_String("413\n");
+    	            SetSensorLeft(0);
+    	            SetSensorRight(0);
+    	            emergency_flag = 0;
+    	 }
+
+        /* ---------------------------------- -----------------
+         * Example USART processing:
+         * Try to receive up to 5 values. If received, add 1 to each value
+         * and send them back.
+         * ------------------------------------------------------ */
+    	/* ----------------------------------------------------- */
+
+    	if (newDataFlag)
+    	{
+    	    // Clear the flag so we process new data only once.
+    	    newDataFlag = 0;
+    	    SetSensorRight(1);
+
+    	    // Extract a complete message from the ring buffer.
+    	    // (Assume messages are terminated by '\n'.)
+    	    char message[50] = {0};
+    	    int msgOffset = 0;
+
+    	    // Continue extracting while data is available and we haven't filled the buffer.
+    	    while (RingBuffer_Available() > 0 && msgOffset < (sizeof(message) - 1))
+    	    {
+    	        // Get one byte from the ring buffer.
+    	        uint8_t ch = rxBuffer[rxReadIndex];
+    	        rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;
+    	        message[msgOffset++] = ch;
+    	        // If we encounter a newline, assume the message is complete.
+    	        if (ch == '\n')
+    	        {
+    	            break;
+    	        }
+    	    }
+    	    message[msgOffset] = '\0';  // Null-terminate the message
+
+    	    // Now, tokenize the message using spaces as delimiters.
+    	    // Assume the message contains up to 5 numeric values.
+    	    uint16_t receivedValues[5] = {0};
+    	    int numValues = 0;
+    	    char *token = strtok(message, " ");
+    	    while (token != NULL && numValues < 5)
+    	    {
+    	        receivedValues[numValues++] = (uint16_t)atoi(token);
+    	        token = strtok(NULL, " ");
+    	    }
+
+    	    // Add 1 to each received value.
+    	    for (int i = 0; i < numValues; i++)
+    	    {
+    	        receivedValues[i] += 1;
+    	    }
+
+    	    // Build a response string from the updated values.
+    	    char response[50] = {0};
+    	    int offset = 0;
+    	    for (int i = 0; i < numValues; i++)
+    	    {
+    	        offset += sprintf(response + offset, "%d ", receivedValues[i]);
+    	    }
+    	    strcat(response, "\n");
+
+    	    // Send the response back over USART.
+    	    USART_Send_String(response);
+    	}
+        /* ------------------------------------------------------
+         * Rest of your application code (sensor processing, motion, etc.)
+         * ------------------------------------------------------ */
+
+
+
+
+
         /* Dacă s-a detectat o intersecție (CROSS >= 1) se efectuează o virare */
         if (CROSS >= 1)
         {

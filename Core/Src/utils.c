@@ -8,6 +8,8 @@
 #include "utils.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 void convert_array_to_string(uint8_t *array, uint8_t size, char *result,
 		int result_size) {
@@ -70,4 +72,13 @@ void ProcessReceivedData(uint8_t *buffer, uint16_t length) {
 		SetSensorRight(0);
 		SetSensorLeft(0);
 	}
+}
+
+bool isFirstValueEqual(uint16_t *values, uint8_t count, uint16_t expected)
+{
+    if (count > 0)
+    {
+        return (values[0] == expected);
+    }
+    return false;
 }

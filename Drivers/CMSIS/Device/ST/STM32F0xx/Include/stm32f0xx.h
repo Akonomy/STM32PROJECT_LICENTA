@@ -1,65 +1,65 @@
 /**
- ******************************************************************************
- * @file    stm32f0xx.h
- * @author  MCD Application Team
- * @brief   CMSIS STM32F0xx Device Peripheral Access Layer Header File.           
- *            
- *          The file is the unique include file that the application programmer
- *          is using in the C source code, usually in main.c. This file contains:
- *           - Configuration section that allows to select:
- *              - The STM32F0xx device used in the target application
- *              - To use or not the peripheral's drivers in application code(i.e. 
- *                code will be based on direct access to peripheral's registers 
- *                rather than drivers API), this option is controlled by 
- *                "#define USE_HAL_DRIVER"
- *  
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2016 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file    stm32f0xx.h
+  * @author  MCD Application Team
+  * @brief   CMSIS STM32F0xx Device Peripheral Access Layer Header File.           
+  *            
+  *          The file is the unique include file that the application programmer
+  *          is using in the C source code, usually in main.c. This file contains:
+  *           - Configuration section that allows to select:
+  *              - The STM32F0xx device used in the target application
+  *              - To use or not the peripheral's drivers in application code(i.e. 
+  *                code will be based on direct access to peripheral's registers 
+  *                rather than drivers API), this option is controlled by 
+  *                "#define USE_HAL_DRIVER"
+  *  
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2016 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 /** @addtogroup CMSIS
- * @{
- */
+  * @{
+  */
 
 /** @addtogroup stm32f0xx
- * @{
- */
-
+  * @{
+  */
+    
 #ifndef __STM32F0xx_H
 #define __STM32F0xx_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif /* __cplusplus */
-
+   
 /** @addtogroup Library_configuration_section
- * @{
- */
-
+  * @{
+  */
+  
 /**
- * @brief STM32 Family
- */
+  * @brief STM32 Family
+  */
 #if !defined  (STM32F0)
 #define STM32F0
 #endif /* STM32F0 */
 
 /** Uncomment the line below according to the target STM32 device used in your application.
- * stm32f0xxxx.h file contains:
- * - All the peripheral register's definitions, bits definitions and memory mapping for STM32F0xxxx devices
- * - IRQ channel definition
- * - Peripheral memory mapping and physical registers address definition
- * - Peripheral pointer declaration and driver header file inclusion
- * - Product miscellaneous configuration: assert macros, ï¿½
- * Note: These CMSIS drivers (stm32f0xxxx.h) are always supporting features of the sub-family's superset.
- */
+  * stm32f0xxxx.h file contains:
+  * - All the peripheral register's definitions, bits definitions and memory mapping for STM32F0xxxx devices
+  * - IRQ channel definition
+  * - Peripheral memory mapping and physical registers address definition
+  * - Peripheral pointer declaration and driver header file inclusion
+  * - Product miscellaneous configuration: assert macros, …
+  * Note: These CMSIS drivers (stm32f0xxxx.h) are always supporting features of the sub-family's superset.
+  */
 
 #if !defined (STM32F030x6) && !defined (STM32F030x8) &&                           \
     !defined (STM32F031x6) && !defined (STM32F038xx) &&                           \
@@ -90,20 +90,20 @@
 #endif /* STM32F048x6 */
 
 /*  Tip: To avoid modifying this file each time you need to switch between these
- devices, you can define the device in your toolchain compiler preprocessor.
- */
+        devices, you can define the device in your toolchain compiler preprocessor.
+  */
 #if !defined  (USE_HAL_DRIVER)
 /**
  * @brief Comment the line below if you will not use the peripherals drivers.
- In this case, these drivers will not be included and the application code will 
- be based on direct access to peripherals registers 
- */
-/*#define USE_HAL_DRIVER */
+   In this case, these drivers will not be included and the application code will 
+   be based on direct access to peripherals registers 
+   */
+  /*#define USE_HAL_DRIVER */
 #endif /* USE_HAL_DRIVER */
 
 /**
- * @brief CMSIS Device version number V2.3.7
- */
+  * @brief CMSIS Device version number V2.3.7
+  */
 #define __STM32F0_DEVICE_VERSION_MAIN   (0x02) /*!< [31:24] main version */
 #define __STM32F0_DEVICE_VERSION_SUB1   (0x03) /*!< [23:16] sub1 version */
 #define __STM32F0_DEVICE_VERSION_SUB2   (0x07) /*!< [15:8]  sub2 version */
@@ -112,17 +112,17 @@
                                         |(__STM32F0_DEVICE_VERSION_SUB1 << 16)\
                                         |(__STM32F0_DEVICE_VERSION_SUB2 << 8 )\
                                         |(__STM32F0_DEVICE_VERSION_RC))
-
+                                             
 /**
- * @}
- */
+  * @}
+  */
 
 /** @addtogroup Device_Included
- * @{
- */
+  * @{
+  */
 
 #if defined(STM32F030x6)
-#include "stm32f030x6.h"
+  #include "stm32f030x6.h"
 #elif defined(STM32F030x8)
   #include "stm32f030x8.h"
 #elif defined(STM32F031x6)
@@ -158,32 +158,39 @@
 #endif
 
 /**
- * @}
- */
+  * @}
+  */
 
 /** @addtogroup Exported_types
- * @{
- */
-typedef enum {
-	RESET = 0U, SET = !RESET
+  * @{
+  */ 
+typedef enum 
+{
+  RESET = 0U, 
+  SET = !RESET
 } FlagStatus, ITStatus;
 
-typedef enum {
-	DISABLE = 0U, ENABLE = !DISABLE
+typedef enum 
+{
+  DISABLE = 0U, 
+  ENABLE = !DISABLE
 } FunctionalState;
 #define IS_FUNCTIONAL_STATE(STATE) (((STATE) == DISABLE) || ((STATE) == ENABLE))
 
-typedef enum {
-	SUCCESS = 0U, ERROR = !SUCCESS
+typedef enum 
+{
+  SUCCESS = 0U,
+  ERROR = !SUCCESS
 } ErrorStatus;
 
 /**
- * @}
- */
+  * @}
+  */
+
 
 /** @addtogroup Exported_macros
- * @{
- */
+  * @{
+  */
 #define SET_BIT(REG, BIT)     ((REG) |= (BIT))
 
 #define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
@@ -239,12 +246,13 @@ typedef enum {
 #define ATOMIC_MODIFYH_REG(REG, CLEARMSK, SETMASK) ATOMIC_MODIFY_REG(REG, CLEARMSK, SETMASK) \
 
 /**
- * @}
- */
+  * @}
+  */
 
 #if defined (USE_HAL_DRIVER)
  #include "stm32f0xx_hal.h"
 #endif /* USE_HAL_DRIVER */
+
 
 #ifdef __cplusplus
 }
@@ -252,10 +260,10 @@ typedef enum {
 
 #endif /* __STM32F0xx_H */
 /**
- * @}
- */
+  * @}
+  */
 
 /**
- * @}
- */
+  * @}
+  */
 
