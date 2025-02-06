@@ -5,7 +5,6 @@
  *      Author: andre
  */
 
-
 /**
  * @file usart.c
  * @brief Contains functions for USART communication.
@@ -24,9 +23,11 @@ uint16_t bytes_received;            // Number of bytes received
  * @param data The byte to send.
  */
 void USART_Send_Byte(uint8_t data) {
-    while (!(USART1->ISR & USART_ISR_TXE)); // Wait until TXE flag is set
-    USART1->TDR = data;                    // Write the data to the Transmit Data Register
-    while (!(USART1->ISR & USART_ISR_TC)); // Wait until TC flag is set
+	while (!(USART1->ISR & USART_ISR_TXE))
+		; // Wait until TXE flag is set
+	USART1->TDR = data;          // Write the data to the Transmit Data Register
+	while (!(USART1->ISR & USART_ISR_TC))
+		; // Wait until TC flag is set
 }
 
 /**
@@ -35,9 +36,9 @@ void USART_Send_Byte(uint8_t data) {
  * @param length Length of the data array.
  */
 void USART_Send_Array(uint8_t *data, uint16_t length) {
-    for (uint16_t i = 0; i < length; i++) {
-        USART_Send_Byte(data[i]); // Send each byte
-    }
+	for (uint16_t i = 0; i < length; i++) {
+		USART_Send_Byte(data[i]); // Send each byte
+	}
 }
 
 /**
@@ -47,41 +48,41 @@ void USART_Send_Array(uint8_t *data, uint16_t length) {
  * @return True if successful, false otherwise.
  */
 bool USART_Receive_Two_Values(uint8_t *value1, uint8_t *value2) {
-    char buffer[BUFFER_SIZE] = {0}; // Temporary buffer for received string
-    uint16_t count = 0;
+	char buffer[BUFFER_SIZE] = { 0 }; // Temporary buffer for received string
+	uint16_t count = 0;
 
-    // Receive the string
-    while (count < BUFFER_SIZE) {
-        if (USART1->ISR & USART_ISR_RXNE) { // Check if RXNE flag is set
-            char received_char = (char)USART1->RDR; // Read the received character
-            if (received_char == '\n') { // Stop on newline
-                buffer[count] = '\0'; // Null-terminate the string
-                break;
-            }
-            buffer[count++] = received_char;
-        }
-    }
+	// Receive the string
+	while (count < BUFFER_SIZE) {
+		if (USART1->ISR & USART_ISR_RXNE) { // Check if RXNE flag is set
+			char received_char = (char) USART1->RDR; // Read the received character
+			if (received_char == '\n') { // Stop on newline
+				buffer[count] = '\0'; // Null-terminate the string
+				break;
+			}
+			buffer[count++] = received_char;
+		}
+	}
 
-    if (count == 0) {
-        return false; // No data received
-    }
+	if (count == 0) {
+		return false; // No data received
+	}
 
-    // Parse the string for two uint8_t values
-    char *token = strtok(buffer, " "); // Split string at the first space
-    if (token == NULL) {
-        return false; // Parsing failed
-    }
+	// Parse the string for two uint8_t values
+	char *token = strtok(buffer, " "); // Split string at the first space
+	if (token == NULL) {
+		return false; // Parsing failed
+	}
 
-    *value1 = (uint8_t)atoi(token); // Convert the first token to uint8_t
+	*value1 = (uint8_t) atoi(token); // Convert the first token to uint8_t
 
-    token = strtok(NULL, " "); // Get the next token
-    if (token == NULL) {
-        return false; // Parsing failed
-    }
+	token = strtok(NULL, " "); // Get the next token
+	if (token == NULL) {
+		return false; // Parsing failed
+	}
 
-    *value2 = (uint8_t)atoi(token); // Convert the second token to uint8_t
+	*value2 = (uint8_t) atoi(token); // Convert the second token to uint8_t
 
-    return true; // Parsing succeeded
+	return true; // Parsing succeeded
 }
 
 /**
@@ -89,10 +90,10 @@ bool USART_Receive_Two_Values(uint8_t *value1, uint8_t *value2) {
  * @param str Pointer to the null-terminated string.
  */
 void USART_Send_String(const char *str) {
-    while (*str) {
-        USART_Send_Byte((uint8_t)*str); // Send each character
-        str++;
-    }
+	while (*str) {
+		USART_Send_Byte((uint8_t) *str); // Send each character
+		str++;
+	}
 }
 
 /**
@@ -106,12 +107,9 @@ void USART_Send_String(const char *str) {
  * @return True if successful, false otherwise.
  */
 
-
 /**
  * @brief Processes received data (Placeholder for user-defined logic).
  * @param buffer Pointer to the received data buffer.
  * @param length Length of the received data.
  */
-
-
 
