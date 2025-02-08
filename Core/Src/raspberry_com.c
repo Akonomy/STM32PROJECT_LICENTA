@@ -19,7 +19,7 @@
  *  - tick: reprezintă numărul de "ticks" (1-10)
  *  - speed: reprezintă viteza mașinii (30-150)
  */
-void control_car(uint16_t direction, uint16_t tick, uint16_t speed) {
+void control_car(uint8_t direction, uint8_t tick, uint8_t speed) {
     // Verificare parametri
     if (direction > 12) {
         // Eroare: direcția este în afara intervalului permis (0-12)
@@ -75,7 +75,7 @@ void control_car(uint16_t direction, uint16_t tick, uint16_t speed) {
  *  - servo_id: reprezintă ID-ul servo-ului (180-190)
  *  - angle: reprezintă unghiul la care se setează servo-ul (0-180)
  */
-void control_servo(uint16_t servo_id, uint16_t angle) {
+void control_servo(uint8_t servo_id, uint8_t angle) {
     // Verificare parametri
     if (servo_id < 180 || servo_id > 190) {
         // Eroare: ID-ul servo-ului este în afara intervalului permis (180-190)
@@ -86,14 +86,13 @@ void control_servo(uint16_t servo_id, uint16_t angle) {
         return;
     }
 
+    //SendSingleValue(0x08, servo_id, angle);  /*UNCOMMENT WHEN U IMPLEMENT SERVO*/
+    //DelayWithTimer(10);
+
 
     SetSensorRight(1);
     SetSensorLeft(1);
-    // DE COMPLETAT LOGIC FOR FUNCTION control_servo
-    // Aici se va implementa logica de control pentru servo,
-    // folosind parametrii servo_id și angle.
-    // ...
-    // end
+
 }
 
 /**
@@ -104,22 +103,62 @@ void control_servo(uint16_t servo_id, uint16_t angle) {
  *                  - 1 pentru senzori de linie,
  *                  - 2 pentru detectare obstacol la roți.
  */
-void request_data(uint16_t sensor_type) {
+void request_data(uint8_t sensor_type) {
     // Verificare parametru
     if (sensor_type != 1 && sensor_type != 2) {
         // Eroare: tipul senzorului nu este valid (trebuie să fie 1 sau 2)
         return;
     }
 
+    read_sensors();
+    USART_Send_Array(sensor_data,8);
+    DelayWithTimer(200);
+    USART_Send_Array(sensor_data,8);
+    DelayWithTimer(200);
+    USART_Send_Array(sensor_data,8);
+    DelayWithTimer(500);
+
+
+
+
+    if (sensor_type==2){
+
+    	for( uint8_t x=0; x<7; x++ ) {
+    	        // Stare 1: Aprinde LED-ul roșu, stinge LED-ul albastru
+    	        SetSensorRight(1);  // LED roșu aprins
+    	        SetSensorLeft(0);   // LED albastru stins
+    	        DelayWithTimer(200);  // așteaptă 200 ms
+
+
+
+
+    	        // Stare 2: Ambele LED-uri stinse (pauză scurtă)
+    	        SetSensorRight(0);
+    	        SetSensorLeft(0);
+    	        DelayWithTimer(200);  // așteaptă 200 ms
+
+    	        // Stare 3: Stinge LED-ul roșu, aprinde LED-ul albastru
+    	        SetSensorRight(0);
+    	        SetSensorLeft(1);   // LED albastru aprins
+    	        DelayWithTimer(200);  // așteaptă 200 ms
+
+
+
+
+
+    	        // Stare 4: Ambele LED-uri stinse (pauză scurtă)
+    	        SetSensorRight(0);
+    	        SetSensorLeft(0);
+    	        DelayWithTimer(200);  // așteaptă 200 ms
+    }
+    }
     SetSensorRight(0);
     SetSensorLeft(0);
 
-    // DE COMPLETAT LOGIC FOR FUNCTION request_data
-    // Aici se va implementa logica pentru solicitarea datelor,
-    // folosind parametrul sensor_type.
-    // ...
-    // end
+
 }
+
+
 
 /**
  * @brief Salvează direcția următoarei intersecții.
@@ -133,23 +172,38 @@ void request_data(uint16_t sensor_type) {
  *                 4 - back,
  *                 0 - stop.
  */
-void save_next_cross_direction(uint16_t direction) {
+void save_next_cross_direction(uint8_t direction) {
     // Verificare parametru
     if (direction > 4) {
         // Eroare: direcția nu este validă (trebuie să fie între 0 și 4)
         return;
     }
 
-
-    SetSensorRight(0);
+    headTo=direction;
+    SetSensorRight(1);
     SetSensorLeft(1);
+    DelayWithTimer(50);
+    SetSensorRight(0);
+    SetSensorLeft(0);
+    DelayWithTimer(50);
+    SetSensorRight(1);
+    SetSensorLeft(1);
+    DelayWithTimer(50);
+    SetSensorRight(0);
+    SetSensorLeft(0);
 
-    // DE COMPLETAT LOGIC FOR FUNCTION save_next_cross_direction
-    // Aici se va implementa logica de salvare a direcției pentru următoarea intersecție,
-    // folosind parametrul direction.
-    // ...
-    // end
+
+
+
 }
+
+
+
+
+
+
+
+
 
 /**
  * @brief Procesează datele primite.
@@ -171,14 +225,14 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t data3
 
 	    // Trimiterea pachetului prin USART
 
-
+/* DEBUG ONLY *//*
 
 	    USART_Send_Byte(type);
 	    USART_Send_Byte(data1);
 	    USART_Send_Byte(data2);
 	    USART_Send_Byte(data3);
 
-
+*/
 
 
     switch(type) {
@@ -236,7 +290,7 @@ void parse_and_process_data(void)
     char *token = strtok(message, " \n");
     while (token != NULL && count < 5)
     {
-        values[count++] = (uint16_t)atoi(token);
+        values[count++] = (uint8_t)atoi(token);
         token = strtok(NULL, " \n");
     }
 

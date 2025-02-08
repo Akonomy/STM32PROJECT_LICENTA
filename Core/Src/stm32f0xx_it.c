@@ -179,7 +179,7 @@ void USART1_IRQHandler(void)
         // Additionally, if the received byte is the emergency code, set the emergency flag.
         if (data == EMERGENCY_CODE)
         {
-        	SetSensorLeft(1);
+        	SetSensorLeft(1); //RED LIGHT ON
         	SetSensorRight(0);
             emergency_flag = 1;
         }

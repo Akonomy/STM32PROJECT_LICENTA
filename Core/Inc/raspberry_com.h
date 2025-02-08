@@ -20,7 +20,7 @@
  * @param tick      Reprezintă numărul de "ticks" (DATA2) - interval valid: 1 până la 10.
  * @param speed     Reprezintă viteza mașinii (DATA3) - interval valid: 30 până la 150.
  */
-void control_car(uint16_t direction, uint16_t tick, uint16_t speed);
+void control_car(uint8_t direction, uint8_t tick, uint8_t speed);
 
 /**
  * @brief Controlează un servo.
@@ -30,7 +30,7 @@ void control_car(uint16_t direction, uint16_t tick, uint16_t speed);
  * @param servo_id  Reprezintă ID-ul servo-ului (DATA1) - interval valid: 180 până la 190.
  * @param angle     Reprezintă unghiul la care se setează servo-ul (DATA2) - interval valid: 0 până la 180.
  */
-void control_servo(uint16_t servo_id, uint16_t angle);
+void control_servo(uint8_t servo_id, uint8_t angle);
 
 /**
  * @brief Solicită date.
@@ -41,7 +41,7 @@ void control_servo(uint16_t servo_id, uint16_t angle);
  *                    - 1 pentru senzori de linie,
  *                    - 2 pentru detectare obstacol la roți.
  */
-void request_data(uint16_t sensor_type);
+void request_data(uint8_t sensor_type);
 
 /**
  * @brief Salvează direcția următoarei intersecții.
@@ -56,7 +56,7 @@ void request_data(uint16_t sensor_type);
  *                    4 - back,
  *                    0 - stop.
  */
-void save_next_cross_direction(uint16_t direction);
+void save_next_cross_direction(uint8_t direction);
 
 /**
  * @brief Procesează datele primite.

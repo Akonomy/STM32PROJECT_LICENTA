@@ -15,7 +15,7 @@ bool SetControlPins(uint8_t code);
 void read_sensors(void);
 uint8_t line_process(void);
 void data_process(void);
-void SetSensorRight(uint8_t state);
-void SetSensorLeft(uint8_t state);
+void SetSensorRight(uint8_t state);  // BLUE LIGHT
+void SetSensorLeft(uint8_t state); //RED LIGHT
 
 #endif /* INC_SENSORS_H_ */
