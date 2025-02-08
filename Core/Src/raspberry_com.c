@@ -9,7 +9,8 @@
 #include "usart.h"
 #include "globals.h"
 #include "sensors.h"
-
+#include "communication.h"
+#include "timer.h"
 /**
  * @brief Controlează mașina.
  *
@@ -24,7 +25,7 @@ void control_car(uint16_t direction, uint16_t tick, uint16_t speed) {
         // Eroare: direcția este în afara intervalului permis (0-12)
         return;
     }
-    if (tick < 1 || tick > 10) {
+    if (tick < 1 || tick > 20) {
         // Eroare: tick-ul este în afara intervalului permis (1-10)
         return;
     }
@@ -33,11 +34,35 @@ void control_car(uint16_t direction, uint16_t tick, uint16_t speed) {
         return;
     }
 
-    // DE COMPLETAT LOGIC FOR FUNCTION control_car
-    // Aici se va implementa logica de control pentru mașină,
-    // folosind parametrii direction, tick și speed.
-    // ...
-    // end
+
+
+	/*  max_x-times  direction_x in direction x
+	 *  ARDUINO DIRECTIONS MAP , FOR GO() FUNCTION
+	 *  case 0: return "STOP";
+	 case 1: return "FORWARD";
+	 case 2: return "RIGHT";
+	 case 3: return "LEFT";
+	 case 4: return "SLIGHTLY RIGHT";
+	 case 5: return "SLIGHTLY LEFT";
+	 case 6: return "DIAGONAL RIGHT";
+	 case 7: return "DIAGONAL LEFT";
+	 case 8: return "HARD TURN LEFT";
+	 case 9: return "HARD TURN RIGHT";
+	 case 10: return "LEFT ROTATE";
+	 case 11: return "RIGHT ROTATE";
+	 case 12: return "BACKWARD";
+
+	 *
+	 */
+
+	for (uint8_t x = 0; x < tick; x++) {
+
+		SendSingleValue(0x08, speed, direction);
+		DelayWithTimer(100);
+		SendSingleValue(0x08, speed, 0);
+
+	}
+
 
     SetSensorRight(1);
     SetSensorLeft(0);
@@ -141,7 +166,21 @@ void save_next_cross_direction(uint16_t direction) {
  *   - TYPE 3: request_data(data1)
  *   - TYPE 4: save_next_cross_direction(data1)
  */
-void process_rasp_data(uint16_t type, uint16_t data1, uint16_t data2, uint16_t data3) {
+void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t data3) {
+
+
+	    // Trimiterea pachetului prin USART
+
+
+
+	    USART_Send_Byte(type);
+	    USART_Send_Byte(data1);
+	    USART_Send_Byte(data2);
+	    USART_Send_Byte(data3);
+
+
+
+
     switch(type) {
         case 1:
             // TYPE 1: Control Car
@@ -192,7 +231,7 @@ void parse_and_process_data(void)
     message[msgOffset] = '\0';  // Ensure null termination
 
     // Tokenize the message. We allow up to 5 tokens, but only use the first 4.
-    uint16_t values[5] = {0};
+    uint8_t values[5] = {0};
     int count = 0;
     char *token = strtok(message, " \n");
     while (token != NULL && count < 5)

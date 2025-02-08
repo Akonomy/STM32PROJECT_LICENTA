@@ -9,7 +9,7 @@
 #define INC_RASPBERRY_COM_H_
 
 #include <stdint.h>
-
+#include "usart.h"
 
 /**
  * @brief Controlează mașina.
@@ -73,7 +73,7 @@ void save_next_cross_direction(uint16_t direction);
  * @param data2  Al doilea parametru (DATA2)
  * @param data3  Al treilea parametru (DATA3)
  */
-void process_rasp_data(uint16_t type, uint16_t data1, uint16_t data2, uint16_t data3);
+void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t data3);
 
 
 
