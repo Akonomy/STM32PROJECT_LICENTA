@@ -12,6 +12,7 @@
 
 extern uint8_t sensor_data[8];   // Array pentru citirile senzorilor
 extern uint8_t CROSS;            // Contor pentru intersecții
+extern uint8_t lost_car;
 extern uint8_t headTo;           // Direcția pentru viraj (default back)
 extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
 
@@ -39,6 +40,11 @@ extern uint8_t helper[2];
 extern uint8_t lastStateCK;
 extern uint8_t lastStateDT;
 extern uint8_t clockChanged;
+
+
+
+//variables to memorize where to turn after meet a cross
+extern uint8_t direction_cross;
 
 
 

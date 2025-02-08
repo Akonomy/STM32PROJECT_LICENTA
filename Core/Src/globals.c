@@ -11,10 +11,17 @@
 
 
 
+
+
 uint8_t sensor_data[8] = {0};
 uint8_t CROSS = 0;
+uint8_t lost_car=0;
 uint8_t headTo = 4;      // Default: back
 uint8_t rasp_control = 0;
+
+
+
+
 
 
 uint8_t last_state_left = 0;
@@ -31,6 +38,8 @@ uint8_t speed = 125;
 uint8_t *CK = NULL;
 uint8_t *DT = NULL;
 
+
+
 uint8_t helper[2] = {0, 0};
 uint8_t lastStateCK = 0;
 uint8_t lastStateDT = 0;
@@ -38,6 +47,8 @@ uint8_t clockChanged = 0;
 
 
 
+//variables to memorize where to turn after meet a cross
+uint8_t direction_cross=0;
 
 
 

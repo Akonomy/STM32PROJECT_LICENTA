@@ -51,220 +51,137 @@ bool SetControlPins(uint8_t code) {
 
 
 
-    uint8_t line_process() {
-    	// Assign sensor data to logical variables
-    	uint8_t left_line = sensor_data[0];
-    	uint8_t mid_line = sensor_data[4];
-    	uint8_t right_line = sensor_data[6];
+    uint8_t line_process(void) {
+        // Mapăm valorile senzorilor folosind nume semnificative.
+        // Ordinea senzorilor: far_left_line, left_line, mid_line, right_line, far_right_line.
+        uint8_t far_left_line  = sensor_data[3];
+        uint8_t left_line      = sensor_data[0];
+        uint8_t mid_line       = sensor_data[4];
+        uint8_t right_line     = sensor_data[6];
+        uint8_t far_right_line = sensor_data[1];
 
-    	// Default direction is STOP
-    	uint8_t direction = 0;
+        uint8_t direction = 0;  // Direcție implicită: STOP (0)
 
-    	if (mid_line) {
-    		// Middle sensor is on the line
-    		if (left_line && right_line) {
-    			// All sensors are active -> Stop
-    			CROSS++;
-    			direction = 0;  // STOP
-    			helper[0] = 0;  // Reset guesses
-    			helper[1] = 0;  // Reset guesses
-    		} else if (left_line && !right_line) {
-    			// Middle and Left sensors active -> Adjust slightly left
-    			direction = 5;  // A LITTLE TO LEFT
-    			helper[0] = 0;  // Reset guesses
-    			helper[1] = 0;  // Reset guesses
-    		} else if (right_line && !left_line) {
-    			// Middle and Right sensors active -> Adjust slightly right
-    			direction = 4;  // A LITTLE TO RIGHT
-    			helper[0] = 0;  // Reset guesses
-    			helper[1] = 0;  // Reset guesses
-    		} else {
-    			// Only Middle sensor active -> Go Forward
-    			direction = 1;  // FORWARD
-    			helper[0] = 0;  // Reset guesses
-    			helper[1] = 0;  // Reset guesses
-    		}
-    	} else {  // Middle sensor is off the line
-    		if (left_line && !right_line) {
-    			// Line is on the left -> Turn left
-    			direction = 3;  // LEFT
-    			helper[0] = 0;  // Reset guesses
-    			helper[1] = 0;  // Reset guesses
-    		} else if (right_line && !left_line) {
-    			// Line is on the right -> Turn right
-    			direction = 2;  // RIGHT
-    			helper[0] = 0;  // Reset guesses
-    			helper[1] = 0;  // Reset guesses
-    		} else if (!left_line && !right_line) {
+        // Flaguri helper statice pentru algoritmul de căutare (când niciun senzor nu este activ).
+        static uint8_t helper_left = 0;
+        static uint8_t helper_right = 0;
+        // Variabilă statică pentru a reține ce parte a fost activă ultima dată:
+        // -1: senzorii din stânga; 1: senzorii din dreapta; 0: necunoscut.
+        static int8_t last_sensor_side = 0;
 
-    			// All sensors are off -> Alternate based on helper
-    			if (last_direction == 2 && helper[1] == 0) {
-    				direction = 2;  // Guess LEFT
-    				go(1, 2);
-    				helper[1] = 1;  // Mark RIGHT as used
-    			}
+        /* --- CAZ: CROSS ---
+           Pattern: 1 1 1 1 1 (toți senzorii activi)
+           Acțiune: Oprește mașina și înregistrează evenimentul CROSS.
+        */
+        if (far_left_line && left_line && mid_line && right_line && far_right_line) {
+            CROSS++;         // Înregistrăm evenimentul de cross.
+            direction = 0;   // Oprire.
+            helper_left = 0;
+            helper_right = 0;
+            last_sensor_side = 0;
+        }
+        /* --- CAZURI: STÂNGA ---
+           Tabel:
+             Pattern: 1 0 0 0 0  -> direction 10
+             Pattern: 1 1 0 0 0  -> direction 3
+             Pattern: 1 1 1 0 0  -> direction 8
+        */
+        else if (far_left_line && !left_line && !mid_line && !right_line && !far_right_line) {
+            direction = 10;
+            last_sensor_side = -1;
+            helper_left = 0;
+            helper_right = 0;
+        }
+        else if (far_left_line && left_line && !mid_line && !right_line && !far_right_line) {
+            direction = 3;
+            last_sensor_side = -1;
+            helper_left = 0;
+            helper_right = 0;
+        }
+        else if (far_left_line && left_line && mid_line && !right_line && !far_right_line) {
+            direction = 8;
+            last_sensor_side = -1;
+            helper_left = 0;
+            helper_right = 0;
+        }
+        /* --- CAZURI: FORWARD ---
+           Tabelul original:
+             Pattern: 0 1 1 1 0  -> direction 1
+             Pattern: 0 1 1 0 0  -> direction 1
+             Pattern: 0 0 1 1 0  -> direction 1
+           Am inclus și cazul suplimentar:
+             Pattern: 0 0 1 0 0  -> direction 1
+        */
+        else if ((!far_left_line && left_line && mid_line && right_line && !far_right_line) ||
+                 (!far_left_line && left_line && mid_line && !right_line && !far_right_line) ||
+                 (!far_left_line && !left_line && mid_line && right_line && !far_right_line) ||
+                 (!far_left_line && !left_line && mid_line && !right_line && !far_right_line)) {
+            direction = 1;
+            last_sensor_side = 0;  // Fără deviație laterală.
+            helper_left = 0;
+            helper_right = 0;
+        }
+        /* --- CAZURI: DREAPTA ---
+           Tabel:
+             Pattern: 0 0 1 1 1  -> direction 9
+             Pattern: 0 0 0 1 1  -> direction 2
+             Pattern: 0 0 0 0 1  -> direction 11
+        */
+        else if (!far_left_line && !left_line && mid_line && right_line && far_right_line) {
+            direction = 9;
+            last_sensor_side = 1;
+            helper_left = 0;
+            helper_right = 0;
+        }
+        else if (!far_left_line && !left_line && !mid_line && right_line && far_right_line) {
+            direction = 2;
+            last_sensor_side = 1;
+            helper_left = 0;
+            helper_right = 0;
+        }
+        else if (!far_left_line && !left_line && !mid_line && !right_line && far_right_line) {
+            direction = 11;
+            last_sensor_side = 1;
+            helper_left = 0;
+            helper_right = 0;
+        }
+        /* --- CAZ SPECIAL: Niciun Senzor Activ ---
+           Pattern: 0 0 0 0 0
+           Acțiune:
+             - Dacă ultima detecție a fost pe partea stângă, încearcă întâi rotația la stânga (direction 10),
+               apoi la dreapta (direction 11).
+             - Dacă ultima detecție a fost pe partea dreaptă, încearcă întâi rotația la dreapta,
+               apoi la stânga.
+             - Dacă ambele opțiuni au fost deja încercate, oprește mașina și setează flagul lost_car.
+             - Dacă nu avem informații anterioare, oprește mașina.
+        */
 
-    			else if (last_direction == 3 && helper[0] == 0) {
-    				direction = 3;  // Guess RIGHT
-    				go(1, 3);
-    				helper[0] = 1;  // Mark LEFT as used
-    			}
 
-    			else if (helper[0] == 1 && helper[1] == 1) {
-    				// Both directions used -> Stop
-    				direction = 0;  // STOP
-    				helper[0] = 0;  // Reset guesses
-    				helper[1] = 0;  // Reset guesses
-    				go(1, 4);
-    				go(1, 1);
-    			}
 
-    		} else {
-    			// Unexpected case: Default to STOP
-    			direction = 0;  // STOP
-    			helper[0] = 0;  // Reset guesses
-    			helper[1] = 0;  // Reset guesses
-    		}
-    	}
+        /* --- CAZ: DEFAULT ---
+           Pentru orice altă combinație neașteptată, oprește mașina.
+        */
+        else {
+            direction = 0;
+            helper_left = 0;
+            helper_right = 0;
+            last_sensor_side = 0;
+        }
 
-    	// Update last_direction for tracking
-    	if (direction != 6 && direction != 0) { // Exclude STOP and BACK commands from direction memory
-    		last_direction = direction;
-    	}
+        // Actualizăm last_direction pentru referințe ulterioare (ignorăm comenzile STOP (0) și BACK (6)).
+        if (direction != 6 && direction != 0) {
+            last_direction = direction;
+        } else if (direction == 0) {
+            last_direction = 0;
+        }
 
-    	if (helper[1] && !helper[0]) {
-    		last_direction = 3;
-    	}
-    	if (helper[0] && !helper[1]) {
-    		last_direction = 2;
-    	}
-    	if (direction == 0) {
-    		last_direction = 0;
-    	}
-
-    	return direction;
+        return direction;
     }
 
 
 
 
 
-
-
-    void data_process() {
-    	// Attribute local names
-    	uint8_t data_left = sensor_data[3];
-    	uint8_t data_right = sensor_data[1];
-    	clockChanged = 0;
-
-    	// PHASE 0: INIT PHASE
-    	if (phase == 0) {
-    		// Check sensors
-
-    		// Reset data array for a fresh start
-
-    		//set a CK
-    		if (!CK_set) {
-    			if (data_left == 0 && data_right == 0)
-    				return; // None high
-    			if (data_left == 1 && data_right == 1)
-    				return; // Both high
-
-    			// Determine CK and DT
-
-    			CK = (data_left == 1) ? &data_left : &data_right;
-    			DT = (data_left == 0) ? &data_left : &data_right;
-
-    			CK_set = 1;
-
-    		}
-
-    		if (CK_set) {
-    			if (count_up == 0 && (*CK == 1 && *DT == 0)) {
-    				count_up++;
-    				Timeout(TIMEOUT_DURATION);
-    				return;
-
-    			} else if ((!checkTimeout() && count_up == 1)
-    					&& (*CK == 0 && *DT == 0)) {
-    				count_up++;
-    				Timeout(TIMEOUT_DURATION);
-    				return;
-
-    			} else if ((!checkTimeout() && count_up == 2)
-    					&& (*CK == 1 && *DT == 0)) {
-
-    				for (int i = 0; i < 16; i++) {
-    					history[i] = 0;
-    				}
-    				DTIndex = 0;
-
-    				enough_data = 0;
-    				count_up++;
-    				lastStateCK = *CK;
-    				lastStateDT = *DT;
-    				phase++;
-    				Timeout(TIMEOUT_DURATION);
-    				return;
-
-    			} else if (checkTimeout() || *DT == 1) {
-    				count_up = 0;
-    				CK_set = 0;
-    				phase = 0;
-
-    			}
-
-    		} //end if ck_set
-
-    	}
-
-    	// PHASE 1: READ DATA
-    	if (phase == 1) {
-
-    		if (checkTimeout()) {
-
-
-
-    			if (checkTimeout() && DTIndex > 4) {
-    					phase = 0;
-    					enough_data = 1;
-    					SetSensorRight(1);
-    				}
-
-    			else {
-    			phase = 0; // Timeout, reset phase
-    			count_up = 0;
-    			DTIndex = 0;
-    			CK_set = 0;
-    			}
-    			return;
-
-    		}
-
-    		if (*CK != lastStateCK) {
-    			lastStateCK = *CK;
-    			clockChanged = 1;
-    			Timeout(600);
-
-
-    		}
-
-    		if (clockChanged && *CK == 1) { // daca a existat o tranzitie si clock e high
-
-    			history[DTIndex] = *DT;
-    			DTIndex++;
-    		}
-
-    		else if (DTIndex > 5) {
-
-    			phase = 0;
-    			enough_data = 1;
-
-    		}
-
-    	}
-
-    } //end void
 
 
     void SetSensorRight(uint8_t state) {

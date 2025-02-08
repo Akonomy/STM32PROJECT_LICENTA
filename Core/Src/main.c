@@ -28,6 +28,9 @@
 #include "utils.h"         // Funcții utilitare (convertire șiruri, debug etc.)
 #include "globals.h"       // Variabile globale
 
+
+#include "raspberry_com.h" //process mesaje de la raspberry pi
+
 /* Private defines -----------------------------------------------------------*/
 #define FORWARD 0x2
 #define RIGHT   0x3
@@ -74,80 +77,12 @@ int main(void)
 
 
 
-    	if (emergency_flag)
-    	        {
-    	            // Send back "413\n" immediately.
-    	            USART_Send_String("413\n");
-    	            SetSensorLeft(0);
-    	            SetSensorRight(0);
-    	            emergency_flag = 0;
-    	 }
+    	if (newDataFlag){
 
-        /* ---------------------------------- -----------------
-         * Example USART processing:
-         * Try to receive up to 5 values. If received, add 1 to each value
-         * and send them back.
-         * ------------------------------------------------------ */
-    	/* ----------------------------------------------------- */
 
-    	if (newDataFlag)
-    	{
-    	    // Clear the flag so we process new data only once.
-    	    newDataFlag = 0;
-    	    SetSensorRight(1);
-
-    	    // Extract a complete message from the ring buffer.
-    	    // (Assume messages are terminated by '\n'.)
-    	    char message[50] = {0};
-    	    int msgOffset = 0;
-
-    	    // Continue extracting while data is available and we haven't filled the buffer.
-    	    while (RingBuffer_Available() > 0 && msgOffset < (sizeof(message) - 1))
-    	    {
-    	        // Get one byte from the ring buffer.
-    	        uint8_t ch = rxBuffer[rxReadIndex];
-    	        rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;
-    	        message[msgOffset++] = ch;
-    	        // If we encounter a newline, assume the message is complete.
-    	        if (ch == '\n')
-    	        {
-    	            break;
-    	        }
-    	    }
-    	    message[msgOffset] = '\0';  // Null-terminate the message
-
-    	    // Now, tokenize the message using spaces as delimiters.
-    	    // Assume the message contains up to 5 numeric values.
-    	    uint16_t receivedValues[5] = {0};
-    	    int numValues = 0;
-    	    char *token = strtok(message, " ");
-    	    while (token != NULL && numValues < 5)
-    	    {
-    	        receivedValues[numValues++] = (uint16_t)atoi(token);
-    	        token = strtok(NULL, " ");
-    	    }
-
-    	    // Add 1 to each received value.
-    	    for (int i = 0; i < numValues; i++)
-    	    {
-    	        receivedValues[i] += 1;
-    	    }
-
-    	    // Build a response string from the updated values.
-    	    char response[50] = {0};
-    	    int offset = 0;
-    	    for (int i = 0; i < numValues; i++)
-    	    {
-    	        offset += sprintf(response + offset, "%d ", receivedValues[i]);
-    	    }
-    	    strcat(response, "\n");
-
-    	    // Send the response back over USART.
-    	    USART_Send_String(response);
+    		parse_and_process_data();
     	}
-        /* ------------------------------------------------------
-         * Rest of your application code (sensor processing, motion, etc.)
-         * ------------------------------------------------------ */
+
 
 
 
@@ -156,7 +91,7 @@ int main(void)
         /* Dacă s-a detectat o intersecție (CROSS >= 1) se efectuează o virare */
         if (CROSS >= 1)
         {
-            makeTurn(headTo);
+            //makeTurn(headTo);
             headTo = 4;      // Resetează la direcția default (back)
             CROSS = 0;
             SetSensorRight(0);
@@ -164,38 +99,29 @@ int main(void)
         }
 
         /* Citirea senzorilor și procesarea datelor */
-        read_sensors();
-        data_process();
 
-        /* Dacă s-a colectat suficientă informație (flag enough_data este activ) */
-        if (enough_data)
-        {
-            /* Execută o comandă (ex: stop) */
-            go(1, 0);
-            SetSensorRight(1);
-            SetSensorLeft(1);
 
-            char result[50] = {0};
-            /* Convertește datele colectate (ex. din array-ul history sau sensor_data) într-un șir */
-            convert_array_to_string(history, DTIndex, result, sizeof(result));
-            USART_Send_String(result);
 
-            /* Resetează flag-ul pentru date suficiente */
-            enough_data = 0;
 
-            /* Procesează comenzi primite de la Raspberry Pi */
-            rasp_process();
-        }
+        //read_sensors();   /*uncomment this to read data from sensors*/
 
-        /* Dacă modul de control de la Raspberry Pi este activ */
-        if (rasp_control)
-        {
-            raspberry_control();
-        }
+
+
+        //DelayWithTimer(150);
+
+
+
+
+
 
         /* ARDUINO COMMUNICATION ZONE - Nu modifica */
-        direction = line_process();
 
+
+        //direction = line_process();  /*uncomment this to process data from line sensors*/
+
+
+
+      // DelayWithTimer(200);
         /* Ajustează viteza în funcție de starea CK_set */
         if (CK_set)
         {
@@ -205,8 +131,11 @@ int main(void)
         {
             speed = 128;
         }
+
+
         /* Trimite comanda către Arduino prin I2C */
-        SendSingleValue(0x08, speed, direction);
+
+        //SendSingleValue(0x08, speed, direction);   /*uncomment this to send data to arduino*/
 
         DelayWithTimer(15); // Întârziere înainte de următorul ciclu
     }
