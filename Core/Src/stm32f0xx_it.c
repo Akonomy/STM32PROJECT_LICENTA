@@ -130,11 +130,11 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-
+  msTicks++;  // Incrementăm contorul de milisecunde
   /* USER CODE END SysTick_IRQn 0 */
 
   /* USER CODE BEGIN SysTick_IRQn 1 */
-
+  // Aici poți adăuga și alte operații, dacă este necesar.
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -161,13 +161,9 @@ void I2C1_IRQHandler(void)
 /**
   * @brief This function handles USART1 global interrupt.
   */
-#define EMERGENCY_CODE 65
-uint8_t usart_data = 0x9;
-
-
 void USART1_IRQHandler(void)
 {
-    /* USER CODE BEGIN USART1_IRQn 0 */
+  /* USER CODE BEGIN USART1_IRQn 0 */
     if (USART1->ISR & USART_ISR_RXNE)
     {
         uint8_t data = (uint8_t)(USART1->RDR & 0xFF);
@@ -184,10 +180,11 @@ void USART1_IRQHandler(void)
             emergency_flag = 1;
         }
     }
-    /* USER CODE END USART1_IRQn 0 */
-    /* USER CODE BEGIN USART1_IRQn 1 */
-    /* USER CODE END USART1_IRQn 1 */
+  /* USER CODE END USART1_IRQn 0 */
+  /* USER CODE BEGIN USART1_IRQn 1 */
+  /* USER CODE END USART1_IRQn 1 */
 }
+
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */

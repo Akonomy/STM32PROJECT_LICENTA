@@ -182,6 +182,17 @@ uint16_t RingBuffer_Available(void)
 }
 
 
+void RingBuffer_Clear(void)
+{
+    // Resetăm indicii pentru a marca buffer-ul ca fiind gol.
+    rxWriteIndex = 0;
+    rxReadIndex = 0;
+
+    // Ștergem complet conținutul buffer-ului.
+    memset((void *)rxBuffer, 0, RX_BUFFER_SIZE);
+
+}
+
 
 
 

@@ -10,6 +10,17 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "globals.h"
+
+
+
+
+
+uint32_t get_system_time_ms(void);
+
+
+
+
 
 void DelayWithTimer(uint32_t ms);
 void Timeout(uint16_t timeout_ms);

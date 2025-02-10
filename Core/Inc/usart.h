@@ -8,6 +8,7 @@
 
 #include "main.h" // Include necessary dependencies
 #include "usart.h"
+
 // Macros
 #define BUFFER_SIZE 256 // Adjust buffer size as needed
 
@@ -31,6 +32,8 @@ int USART_Receive_Values(uint16_t *values, uint8_t max_values);
 
 void RingBuffer_Put(uint8_t data);
 uint16_t RingBuffer_Available(void);
+
+void RingBuffer_Clear(void);
 void ProcessMessage(void);
 
 

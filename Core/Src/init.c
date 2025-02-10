@@ -244,3 +244,14 @@ void MX_USART1_UART_Init(void)
     NVIC_SetPriority(USART1_IRQn, 0);
     NVIC_EnableIRQ(USART1_IRQn);
 }
+
+
+
+void SysTick_Init(uint32_t ticks)
+{
+    SYSTICK_LOAD = ticks - 1;  // setăm valoarea de reload
+    SYSTICK_VAL = 0;           // resetăm contorul curent
+    // Configurăm SysTick: activăm, alegem ceasul procesorului și activăm întreruperea
+    SYSTICK_CTRL = 0x07;
+}
+

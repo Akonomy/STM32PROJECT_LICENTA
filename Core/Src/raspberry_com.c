@@ -265,7 +265,7 @@ void debug_mode(uint8_t code, uint8_t ticks, uint8_t speed) {
  *
  * În funcție de valoarea lui type, se apelează:
  *   - TYPE 1: control_car(data1, data2, data3)
- *   - TYPE 2: control_servo(data1, data2)
+ *   - TYPE 2: control_servo(data1, data2)a
  *   - TYPE 3: request_data(data1)
  *   - TYPE 4: save_next_cross_direction(data1)
  */
@@ -319,25 +319,38 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t data3
 // to process_rasp_data. Up to 5 tokens are read from the message, though only
 // the first 4 are used for processing.
 //----------------------------------------------------------------------
+
 void parse_and_process_data(void)
 {
+    static uint32_t lastProcessTime = 0;   // Timpul ultimei procesări
+    uint32_t currentTime = get_system_time_ms(); // Obține timpul curent (în ms)
+
+    // Dacă ultimul mesaj a fost procesat cu mai puțin de MIN_PROCESS_INTERVAL ms în urmă,
+    // considerăm că se întâmplă un "spam" de mesaje. În acest caz, curățăm buffer-ul și ieșim.
+    if ((currentTime - lastProcessTime) < MIN_PROCESS_INTERVAL)
+    {
+        RingBuffer_Clear();
+        return;
+    }
+    lastProcessTime = currentTime;  // Actualizăm timpul ultimei procesări
+
     char message[50] = {0};
     int msgOffset = 0;
 
-    // Extract a message from the ring buffer until '\n' or the message buffer is full.
+    // Extrage un mesaj din ring buffer până la caracterul '\n' sau până la umplerea buffer-ului local.
     while (RingBuffer_Available() > 0 && msgOffset < (sizeof(message) - 1))
     {
         uint8_t ch = rxBuffer[rxReadIndex];
-        rxReadIndex = (rxReadIndex + 1) % /* RX_BUFFER_SIZE */ 256;  // Replace 256 with your RX_BUFFER_SIZE
+        rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;  // Asigurați-vă că RX_BUFFER_SIZE este corect definit
         message[msgOffset++] = ch;
         if (ch == '\n')
         {
             break;
         }
     }
-    message[msgOffset] = '\0';  // Ensure null termination
+    message[msgOffset] = '\0';  // Asigurăm terminarea cu null a șirului
 
-    // Tokenize the message. We allow up to 5 tokens, but only use the first 4.
+    // Tokenizează mesajul. Se permit până la 5 token-uri, dar se folosesc primele 4.
     uint8_t values[5] = {0};
     int count = 0;
     char *token = strtok(message, " \n");
@@ -347,16 +360,24 @@ void parse_and_process_data(void)
         token = strtok(NULL, " \n");
     }
 
-    // Make sure we have at least 4 tokens; pad with zeros if needed.
+    // Asigură că avem cel puțin 4 token-uri; completează cu zero dacă e necesar.
     while (count < 4)
     {
         values[count++] = 0;
     }
 
-    // Call process_rasp_data with the first four tokens:
-    //   values[0] -> type, values[1] -> data1, values[2] -> data2, values[3] -> data3.
+    // Curățăm ring buffer-ul înainte de procesare pentru a evita recitirea datelor vechi.
+    RingBuffer_Clear();
+
+    // Apelăm funcția de procesare a datelor cu primele 4 token-uri:
+    //   values[0] -> tip, values[1] -> data1, values[2] -> data2, values[3] -> data3.
     process_rasp_data(values[0], values[1], values[2], values[3]);
 }
+
+    // Call process_rasp_data with the first four tokens:
+    //   values[0] -> type, values[1] -> data1, values[2] -> data2, values[3] -> data3.
+
+
 
 
 

@@ -61,3 +61,14 @@ volatile uint16_t rxReadIndex = 0;
 volatile uint8_t newDataFlag = 0;    // Set if any new data is received
 volatile uint8_t emergency_flag = 0; // Set if an emergency code is received
 
+
+
+
+
+//pentru systick
+volatile uint32_t msTicks = 0;
+
+
+
+
+

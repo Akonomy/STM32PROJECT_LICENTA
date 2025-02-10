@@ -33,3 +33,19 @@ bool checkTimeout(void) {
 	//return false;
 }
 
+
+// Funcție pentru obținerea timpului de sistem în ms.
+uint32_t get_system_time_ms(void)
+{
+    return msTicks;
+}
+
+
+
+
+
+
+
+
+
+

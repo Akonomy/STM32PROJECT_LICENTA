@@ -19,6 +19,21 @@ extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
 #define TIMEOUT_DURATION 100
 #define RX_BUFFER_SIZE 256
 
+#define MIN_PROCESS_INTERVAL 90  // 90 ms
+
+
+#define EMERGENCY_CODE 56
+
+#define SYSTICK_CTRL   (*(volatile uint32_t *)0xE000E010)
+#define SYSTICK_LOAD   (*(volatile uint32_t *)0xE000E014)
+#define SYSTICK_VAL    (*(volatile uint32_t *)0xE000E018)
+#define SYSTICK_CALIB  (*(volatile uint32_t *)0xE000E01C)
+
+// Definim frecvența de lucru a nucleului (de exemplu, 8 MHz; ajustați conform configurației sistemului)
+#define SYSTEM_CORE_CLOCK 8000000UL
+
+
+
 
 
 
@@ -55,6 +70,10 @@ extern volatile uint16_t rxReadIndex;
 
 extern volatile uint8_t newDataFlag;  // Flag set by ISR when new data arrives
 extern volatile uint8_t emergency_flag; // Set if an emergency code is received
+
+
+
+extern volatile uint32_t msTicks;
 
 
 

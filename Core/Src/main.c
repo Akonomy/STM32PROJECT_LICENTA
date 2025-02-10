@@ -49,6 +49,8 @@ int main(void)
 {
     uint8_t direction = 0;
 
+
+
     /* MCU Configuration */
     /* Activează ceasurile pentru SYSCFG și PWR */
     LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
@@ -68,12 +70,26 @@ int main(void)
     MX_TIM16_Init();
     MX_USART1_UART_Init();
 
+    SysTick_Init(SYSTEM_CORE_CLOCK / 1000); // Dacă SYSTEM_CORE_CLOCK e 8MHz, atunci ticks = 8000
+
+
     /* Start base timer (ex: TIM14) */
     TIM14->CR1 |= TIM_CR1_CEN;
 
     /* Infinite loop */
+
+
+
+
+
     while (1)
     {
+
+
+
+
+
+
 
 
 
@@ -98,13 +114,8 @@ int main(void)
 
 
     	if (newDataFlag){
-
-
     		parse_and_process_data();
     	}
-
-
-
 
 
 
@@ -122,9 +133,7 @@ int main(void)
 
 
 
-
         //read_sensors();   /*uncomment this to read data from sensors*/
-
 
 
         //DelayWithTimer(150);
@@ -139,18 +148,6 @@ int main(void)
 
         //direction = line_process();  /*uncomment this to process data from line sensors*/
 
-
-
-      // DelayWithTimer(200);
-        /* Ajustează viteza în funcție de starea CK_set */
-        if (CK_set)
-        {
-            speed = 145;
-        }
-        else
-        {
-            speed = 128;
-        }
 
 
         /* Trimite comanda către Arduino prin I2C */
