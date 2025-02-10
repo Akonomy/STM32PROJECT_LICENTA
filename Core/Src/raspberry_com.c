@@ -11,6 +11,20 @@
 #include "sensors.h"
 #include "communication.h"
 #include "timer.h"
+
+
+
+
+
+    uint32_t lastProcessTime = 0;              // Timpul ultimei procesări
+    uint32_t currentTime = 0;        // Obține timpul curent (în ms)
+
+
+
+
+
+
+
 /**
  * @brief Controlează mașina.
  *
@@ -24,7 +38,7 @@ void control_car(uint8_t direction, uint8_t tick, uint8_t speed) {
 	   SetSensorRight(1);
 	    SetSensorLeft(1);
     // Verificare parametri
-    if (direction > 12) {
+    if (direction > 20) {
         // Eroare: direcția este în afara intervalului permis (0-12)
         return;
     }
@@ -322,42 +336,88 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t data3
 
 void parse_and_process_data(void)
 {
-    static uint32_t lastProcessTime = 0;   // Timpul ultimei procesări
-    uint32_t currentTime = get_system_time_ms(); // Obține timpul curent (în ms)
 
-    // Dacă ultimul mesaj a fost procesat cu mai puțin de MIN_PROCESS_INTERVAL ms în urmă,
-    // considerăm că se întâmplă un "spam" de mesaje. În acest caz, curățăm buffer-ul și ieșim.
+	currentTime = get_system_time_ms();
+
+
+    // Verifică intervalul minim între procesări pentru a evita "spam"-ul de mesaje.
     if ((currentTime - lastProcessTime) < MIN_PROCESS_INTERVAL)
+    {
+        RingBuffer_Clear();
+        SetSensorRight(1);
+       	DelayWithTimer(250);
+       	SetSensorRight(0);
+       	lastProcessTime = currentTime;
+
+
+
+        return;
+    }
+     // Actualizează timpul ultimei procesări
+
+    char message[50] = {0};         // Buffer local pentru mesaj
+    int msgOffset = 0;
+
+    // Caută markerul de început '<' în ring buffer.
+    while (RingBuffer_Available() > 0 && msgOffset < (sizeof(message) - 1))
+    {
+        uint8_t ch = rxBuffer[rxReadIndex];
+        rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;  // Asigură circularitatea bufferului
+        if (ch == '<')
+        {
+            message[msgOffset++] = ch;  // Salvează markerul de început
+            break;
+        }
+    }
+
+    // Dacă nu s-a găsit markerul de început, se consideră mesaj invalid.
+    if (msgOffset == 0)
     {
         RingBuffer_Clear();
         return;
     }
-    lastProcessTime = currentTime;  // Actualizăm timpul ultimei procesări
 
-    char message[50] = {0};
-    int msgOffset = 0;
-
-    // Extrage un mesaj din ring buffer până la caracterul '\n' sau până la umplerea buffer-ului local.
+    // Citește caractere până se găsește markerul de sfârșit '>' sau până se umple bufferul.
+    bool endMarkerFound = false;
     while (RingBuffer_Available() > 0 && msgOffset < (sizeof(message) - 1))
     {
         uint8_t ch = rxBuffer[rxReadIndex];
-        rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;  // Asigurați-vă că RX_BUFFER_SIZE este corect definit
+        rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;
         message[msgOffset++] = ch;
-        if (ch == '\n')
+        if (ch == '>')
         {
+            endMarkerFound = true;
             break;
         }
     }
-    message[msgOffset] = '\0';  // Asigurăm terminarea cu null a șirului
+    message[msgOffset] = '\0';  // Asigură terminarea cu null a șirului
 
-    // Tokenizează mesajul. Se permit până la 5 token-uri, dar se folosesc primele 4.
+    // Dacă nu s-a găsit markerul de sfârșit, mesajul este incomplet.
+    if (!endMarkerFound)
+    {
+        RingBuffer_Clear();
+        return;
+    }
+
+    // Verifică dacă mesajul începe cu '<' și se termină cu '>'
+    if (message[0] != '<' || message[msgOffset - 1] != '>')
+    {
+        RingBuffer_Clear();
+        return;
+    }
+
+    // Elimină caracterele de delimitare: transformă '>' în '\0' și setează un pointer la interiorul mesajului.
+    message[msgOffset - 1] = '\0';
+    char *innerMessage = message + 1;  // Sărim peste caracterul '<'
+
+    // Tokenizează șirul interior; se permit până la 5 token-uri, dar se folosesc primele 4.
     uint8_t values[5] = {0};
     int count = 0;
-    char *token = strtok(message, " \n");
+    char *token = strtok(innerMessage, " ");
     while (token != NULL && count < 5)
     {
         values[count++] = (uint8_t)atoi(token);
-        token = strtok(NULL, " \n");
+        token = strtok(NULL, " ");
     }
 
     // Asigură că avem cel puțin 4 token-uri; completează cu zero dacă e necesar.
@@ -366,17 +426,13 @@ void parse_and_process_data(void)
         values[count++] = 0;
     }
 
-    // Curățăm ring buffer-ul înainte de procesare pentru a evita recitirea datelor vechi.
+    // Curățăm ring buffer-ul pentru a evita recitirea datelor vechi.
     RingBuffer_Clear();
 
     // Apelăm funcția de procesare a datelor cu primele 4 token-uri:
     //   values[0] -> tip, values[1] -> data1, values[2] -> data2, values[3] -> data3.
     process_rasp_data(values[0], values[1], values[2], values[3]);
 }
-
-    // Call process_rasp_data with the first four tokens:
-    //   values[0] -> type, values[1] -> data1, values[2] -> data2, values[3] -> data3.
-
 
 
 

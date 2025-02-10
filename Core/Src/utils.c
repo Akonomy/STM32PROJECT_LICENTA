@@ -87,19 +87,5 @@ bool isFirstValueEqual(uint16_t *values, uint8_t count, uint16_t expected)
 }
 
 
-uint32_t* GetSystemTimeArray(void)
-{
-    // Array static pentru a reține valorile (utilizare statică în contextul embedded)
-    static uint32_t timeArray[20];
-
-    // Colectăm 20 de valori la intervale de 100 ms
-    for (uint8_t i = 0; i < 20; i++)
-    {
-        timeArray[i] = get_system_time_ms();
-        DelayWithTimer(100);
-    }
-
-    return timeArray;
-}
 
 

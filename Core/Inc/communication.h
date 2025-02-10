@@ -13,8 +13,8 @@
 
 void I2C_Send_Buffer(uint8_t slave_address, uint8_t *data, uint16_t size);
 void SendSingleValue(uint8_t slave_address, uint8_t index, uint16_t value);
-void rasp_process(void);
-void raspberry_control(void);
+
+
 
 
 #endif /* INC_COMMUNICATION_H_ */

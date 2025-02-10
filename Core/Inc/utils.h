@@ -13,6 +13,7 @@
 
 #include "globals.h"
 #include "timer.h"
+#include "sensors.h"
 
 
 void convert_array_to_string(uint8_t *array, uint8_t size, char *result,
