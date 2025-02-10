@@ -19,7 +19,7 @@ extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
 #define TIMEOUT_DURATION 100
 #define RX_BUFFER_SIZE 256
 
-#define MIN_PROCESS_INTERVAL 90  // 90 ms
+#define MIN_PROCESS_INTERVAL 256  // 90 ms
 
 
 #define EMERGENCY_CODE 56
