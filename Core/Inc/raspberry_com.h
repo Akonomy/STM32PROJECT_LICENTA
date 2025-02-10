@@ -58,6 +58,13 @@ void request_data(uint8_t sensor_type);
  */
 void save_next_cross_direction(uint8_t direction);
 
+
+
+
+void debug_mode(uint8_t code, uint8_t ticks, uint8_t speed);
+
+
+
 /**
  * @brief Procesează datele primite.
  *

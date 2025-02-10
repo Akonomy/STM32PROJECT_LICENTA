@@ -40,11 +40,11 @@ void makeTurn(uint8_t direction_x) {
 		return;
 	case 2: //right
 		go(2, 1);
-		go(4, 11); //make a first turn
+		go(4, 7); //make a first turn
 		read_sensors();
 		while (lineNotFound) {
 
-			go(1, 11); // continue rotating until line found
+			go(1, 7); // continue rotating until line found
 			read_sensors();  //update sensors
 			if (sensor_data[4] || sensor_data[0] || sensor_data[6]) {
 				lineNotFound = 0;
@@ -55,11 +55,11 @@ void makeTurn(uint8_t direction_x) {
 
 	case 3: //left turn
 		go(2, 1);
-		go(4, 10); //make a first turn
+		go(4, 8); //make a first turn
 		read_sensors();
 		while (lineNotFound) {
 
-			go(1, 10); // continue rotating until line found
+			go(1, 8); // continue rotating until line found
 			read_sensors();  //update sensors
 			if (sensor_data[4] || sensor_data[0] || sensor_data[6]) {
 				lineNotFound = 0;
@@ -69,12 +69,12 @@ void makeTurn(uint8_t direction_x) {
 		}
 
 	case 4: //left turn
-		go(3, 12);
-		go(6, 11); //make a first turn
+		go(3, 3);
+		go(6, 7); //make a first turn
 		read_sensors();
 		while (lineNotFound) {
 
-			go(1, 11); // continue rotating until line found
+			go(1, 7); // continue rotating until line found
 			read_sensors();  //update sensors
 			if (sensor_data[4] || sensor_data[0] || sensor_data[6]) {
 				lineNotFound = 0;
@@ -91,12 +91,14 @@ void makeTurn(uint8_t direction_x) {
 
 } //end of makeTurn()
 
-void go(uint8_t max_x, uint8_t direction_x) {
 
-	/*  max_x-times  direction_x in direction x
-	 *  ARDUINO DIRECTIONS MAP , FOR GO() FUNCTION
-	 *  case 0: return "STOP";
-	 case 1: return "FORWARD";
+
+
+
+/*OLD
+ *
+ *
+ * 	 case 1: return "FORWARD";
 	 case 2: return "RIGHT";
 	 case 3: return "LEFT";
 	 case 4: return "SLIGHTLY RIGHT";
@@ -108,6 +110,47 @@ void go(uint8_t max_x, uint8_t direction_x) {
 	 case 10: return "LEFT ROTATE";
 	 case 11: return "RIGHT ROTATE";
 	 case 12: return "BACKWARD";
+ *
+ *
+ *
+ * */
+
+
+
+
+
+
+
+void go(uint8_t max_x, uint8_t direction_x) {
+
+	/*  max_x-times  direction_x in direction x
+	 *  ARDUINO DIRECTIONS MAP , FOR GO() FUNCTION
+	 *  case 0: return "STOP";
+v    case 0:  return 0b00000000; // STOP
+    case 1:  return 0b01010101; // INAINTE (FORWARD)
+    case 2:  return 0b10101010; // INAPOI (BACKWARD)
+    case 3:  return 0b00001001; // DREAPTA-FATA (FRONT-RIGHT)
+    case 4:  return 0b00000110; // STANGA-FATA (FRONT-LEFT)
+    case 5:  return 0b10010000; // spatele se misca in dreapta (BACK-RIGHT)
+    case 6:  return 0b01100000; // spatele se misca in stanga (BACK-LEFT)
+    case 7:  return 0b01101001; // ROTIRE DREAPTA (ROTATE RIGHT)
+    case 8:  return 0b10010110; // ROTIRE STANGA (ROTATE LEFT)
+    case 9:  return 0b10011001; // LATERALA DREAPTA (SIDE-RIGHT)
+    case 10: return 0b01100110; // LATERALA STANGA (SIDE-LEFT)
+    case 11: return 0b01000001; // hard turn dreapta (HARD RIGHT TURN)
+    case 12: return 0b00010100; // hard turn stanga (HARD LEFT TURN)
+    case 13: return 0b10000010; // hard turn stanga miscare spate inapoi
+    case 14: return 0b00101000; // hard turn dreapta miscare spate inapoi
+    case 15: return 0b00010001; // diagonala stanga fata (DIAGONAL FRONT-LEFT)
+    case 16: return 0b00100010; // diagonala spate dreapta (DIAGONAL BACK-RIGHT)
+    case 17: return 0b01000100; // diagonala dreapta fata (DIAGONAL FRONT-RIGHT)
+    case 18: return 0b10001000; // diagonala spate stanga (DIAGONAL BACK-LEFT)
+
+      //SPECIAL CASE
+
+    case 19: return 0b00000001; // little to left (o singura roata)
+    case 20: return 0b00000010; // little to right (o singura roata)
+
 
 	 *
 	 */

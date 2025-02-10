@@ -77,6 +77,26 @@ int main(void)
 
 
 
+/*
+    	for (uint8_t x = 0; x < 21; x++) {
+
+    		for (uint8_t ticks=0; ticks<20; ticks++){
+    			SendSingleValue(0x08, 130, x);
+    			DelayWithTimer(50);
+    		}
+    			DelayWithTimer(500);
+    			SendSingleValue(0x08, 130, 0);
+    			DelayWithTimer(500);
+    			DelayWithTimer(500);
+    			DelayWithTimer(500);
+    			DelayWithTimer(500);
+
+    	}
+
+*/
+
+
+
     	if (newDataFlag){
 
 
