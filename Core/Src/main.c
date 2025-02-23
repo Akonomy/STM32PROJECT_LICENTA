@@ -17,6 +17,7 @@
  */
 /* USER CODE END Header */
 
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "usart.h"         // Fișierul pentru comunicații USART
@@ -37,11 +38,12 @@
 
 
 
+
 /* Private defines -----------------------------------------------------------*/
 #define FORWARD 0x2
 #define RIGHT   0x3
 #define LEFT    0x4
-#define STOP    0x1
+
 
 #define TIMEOUT_DURATION 100 // Durata timeout-ului (ms)
 #define BUFFER_SIZE 256
@@ -147,17 +149,6 @@ int main(void)
 
 
         DelayWithTimer(15);
-
-
-
-
-        memcpy(temp_variable, sensor_data, 8 * sizeof(uint8_t));
-
-
-        temp_variable;
-
-
-
 
 
 

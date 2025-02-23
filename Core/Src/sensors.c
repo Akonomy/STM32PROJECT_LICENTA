@@ -48,11 +48,12 @@ void read_sensors() {
 uint8_t line_process(void) {
 	// Mapăm valorile senzorilor folosind nume semnificative.
 	// Ordinea senzorilor: far_left_line, left_line, mid_line, right_line, far_right_line.
-	uint8_t far_left_line = sensor_data[4];
-	uint8_t left_line = sensor_data[0];
-	uint8_t mid_line = sensor_data[1];
-	uint8_t right_line = sensor_data[3];
-	uint8_t far_right_line = sensor_data[6];
+	uint8_t far_left_line = !sensor_data[4];
+	uint8_t left_line = !sensor_data[0];
+	uint8_t mid_line = !sensor_data[1];
+	uint8_t right_line = !sensor_data[3];
+	uint8_t far_right_line = !sensor_data[6];
+
 
 	uint8_t direction = 0;  // Direcție implicită: STOP (0)
 
@@ -66,14 +67,25 @@ uint8_t line_process(void) {
 
 		if (far_right_line && far_left_line && right_line && left_line) {
 
+			speed=0;
+
 			direction = STOP;
 			CROSS = 1;
 			return direction;
 
 		}
 
-		else {
 
+		if (left_line || right_line){
+
+			speed=150;
+			direction = INAINTE;
+			return direction;
+		}
+
+
+		else {
+			speed=135;
 			direction = INAINTE;
 			return direction;
 		}
@@ -88,6 +100,8 @@ uint8_t line_process(void) {
 	//SE VERIFICA INTAI SENZORII IMEDIAT DREAPTA / IMEDIUAT STANGA
 	if (right_line && !left_line){
 
+		speed=155;
+
 		direction=DREAPTA_FATA;
 
 		return direction;
@@ -96,6 +110,8 @@ uint8_t line_process(void) {
 
 
 	if (left_line && !right_line){
+
+		speed=155;
 
 		direction=STANGA_FATA;
 
@@ -107,6 +123,8 @@ uint8_t line_process(void) {
 
 	if (far_left_line && !far_right_line){
 
+		speed=155;
+
 		direction=HARD_TURN_STANGA;
 
 		return direction;
@@ -115,6 +133,8 @@ uint8_t line_process(void) {
 
 
 	if (far_right_line && !far_left_line){
+
+		speed=155;
 
 		direction=HARD_TURN_DREAPTA;
 
@@ -125,7 +145,7 @@ uint8_t line_process(void) {
 
 
 
-
+return 0;
 
 
 }

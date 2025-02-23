@@ -40,16 +40,16 @@ extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
 #define STOP                            0   // STOP
 #define INAINTE                         1   // INAINTE (FORWARD)
 #define INAPOI                          2   // INAPOI (BACKWARD)
-#define DREAPTA_FATA                    3   // DREAPTA-FATA (FRONT-RIGHT)
-#define STANGA_FATA                     4   // STANGA-FATA (FRONT-LEFT)
+#define STANGA_FATA                    3   // DREAPTA-FATA (FRONT-RIGHT)
+#define DREAPTA_FATA                     4   // STANGA-FATA (FRONT-LEFT)
 #define SPATE_DREAPTA                   5   // spatele se misca in dreapta (BACK-RIGHT)
 #define SPATE_STANGA                    6   // spatele se misca in stanga (BACK-LEFT)
 #define ROTIRE_DREAPTA                  7   // ROTIRE DREAPTA (ROTATE RIGHT)
 #define ROTIRE_STANGA                   8   // ROTIRE STANGA (ROTATE LEFT)
 #define LATERALA_DREAPTA                9   // LATERALA DREAPTA (SIDE-RIGHT)
 #define LATERALA_STANGA                 10  // LATERALA STANGA (SIDE-LEFT)
-#define HARD_TURN_DREAPTA               11  // hard turn dreapta (HARD RIGHT TURN)
-#define HARD_TURN_STANGA                12  // hard turn stanga (HARD LEFT TURN)
+#define HARD_TURN_STANGA               11  // hard turn dreapta (HARD RIGHT TURN)
+#define HARD_TURN_DREAPTA                12  // hard turn stanga (HARD LEFT TURN)
 #define HARD_TURN_SPATE_INAPOI_STANGA    13  // hard turn stanga miscare spate inapoi
 #define HARD_TURN_SPATE_INAPOI_DREAPTA   14  // hard turn dreapta miscare spate inapoi
 #define DIAGONALA_STANGA_FATA           15  // diagonala stanga fata (DIAGONAL FRONT-LEFT)
