@@ -31,6 +31,12 @@
 
 #include "raspberry_com.h" //process mesaje de la raspberry pi
 
+
+#include <string.h>
+#include <stdint.h>
+
+
+
 /* Private defines -----------------------------------------------------------*/
 #define FORWARD 0x2
 #define RIGHT   0x3
@@ -44,10 +50,13 @@
         // Exemplu de variabilă pentru USART
 uint8_t i2c_slave_address = 0x08;    // Adresa I2C a sclavului
 
+
+
 /* Main ----------------------------------------------------------------------*/
 int main(void)
 {
     uint8_t direction = 0;
+    uint8_t temp_variable[8] = {0};
 
 
 
@@ -134,10 +143,19 @@ int main(void)
 
 
 
-        //read_sensors();   /*uncomment this to read data from sensors*/
+        read_sensors();   /*uncomment this to read data from sensors*/
 
 
-        //DelayWithTimer(150);
+        DelayWithTimer(15);
+
+
+
+
+        memcpy(temp_variable, sensor_data, 8 * sizeof(uint8_t));
+
+
+        temp_variable;
+
 
 
 
@@ -147,15 +165,15 @@ int main(void)
         /* ARDUINO COMMUNICATION ZONE - Nu modifica */
 
 
-        //direction = line_process();  /*uncomment this to process data from line sensors*/
+        direction = line_process();  /*uncomment this to process data from line sensors*/
 
 
 
         /* Trimite comanda către Arduino prin I2C */
 
-        //SendSingleValue(0x08, speed, direction);   /*uncomment this to send data to arduino*/
+        SendSingleValue(0x08, speed, direction);   /*uncomment this to send data to arduino*/
 
-        DelayWithTimer(15); // Întârziere înainte de următorul ciclu
+        DelayWithTimer(30); // Întârziere înainte de următorul ciclu
     }
 }
 

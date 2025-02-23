@@ -46,7 +46,7 @@ void control_car(uint8_t direction, uint8_t tick, uint8_t speed) {
         // Eroare: tick-ul este în afara intervalului permis (1-10)
         return;
     }
-    if (speed < 30 || speed > 150) {
+    if (speed < 30 || speed > 200) {
         // Eroare: viteza este în afara intervalului permis (30-150)
         return;
     }
