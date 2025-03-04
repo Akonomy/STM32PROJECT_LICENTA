@@ -66,16 +66,8 @@ extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
 //---------------------------< END DIRECTII >-----------------------------------------//
 
 
+extern uint8_t mode;
 
-extern uint8_t last_state_left;
-extern uint8_t last_state_right;
-extern uint8_t last_direction;
-extern uint8_t history[8];
-extern uint8_t DTIndex;
-extern uint8_t phase;
-extern uint8_t count_up;
-extern uint8_t enough_data;
-extern uint8_t CK_set;
 extern uint8_t speed;
 
 extern uint8_t *CK;

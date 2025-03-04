@@ -40,7 +40,7 @@ void read_sensors() {
 			sensor_data[code] = adcValue;
 
 			// Small delay for stability
-			DelayWithTimer(5);
+			DelayWithTimer(2);
 		}
 	}
 }
@@ -78,14 +78,14 @@ uint8_t line_process(void) {
 
 		if (left_line || right_line){
 
-			speed=150;
+			speed=160;
 			direction = INAINTE;
 			return direction;
 		}
 
 
 		else {
-			speed=135;
+			speed=150;
 			direction = INAINTE;
 			return direction;
 		}

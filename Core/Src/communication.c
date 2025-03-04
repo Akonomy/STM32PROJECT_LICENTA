@@ -61,5 +61,35 @@ void SendSingleValue(uint8_t slave_address, uint8_t index, uint16_t value) {
 
 
 
+// Funcția I2C_Send_Buffer este deja definită și trimite un buffer de date de mărimea specificată către un slave
+
+// Funcția I2C_Send_Packet construiește un pachet cu următoarea structură:
+//  - Primii 2 bytes: mask-ul (16-bit, de exemplu, big-endian: MSB, apoi LSB)
+//  - Următorii N*2 bytes: valorile PWM pentru canalele active, în ordine de la canalul cu număr cel mai mic la cel cu număr cel mai mare,
+//    unde N este numărul de biți setați în mask.
+void I2C_Send_Packet(uint8_t slave_address, uint16_t mask, uint16_t *values, uint8_t numValues) {
+    // Dimensiunea pachetului: 2 bytes pentru mask + 2 bytes pentru fiecare valoare
+    uint8_t packetSize = 2 + (numValues * 2);
+    uint8_t packet[2 + (numValues * 2)];
+
+    // Codificăm mask-ul: MSB primul, apoi LSB
+    packet[0] = (mask >> 8) & 0xFF; // High byte
+    packet[1] = mask & 0xFF;        // Low byte
+
+    // Pentru fiecare valoare, codificăm pe 2 bytes (big-endian)
+    for (uint8_t i = 0; i < numValues; i++) {
+        packet[2 + (i * 2)]     = (values[i] >> 8) & 0xFF; // High byte
+        packet[2 + (i * 2) + 1] = values[i] & 0xFF;          // Low byte
+    }
+
+    // Transmiterea pachetului prin I2C
+    I2C_Send_Buffer(slave_address, packet, packetSize);
+}
+
+
+
+
+
+
 
 

@@ -150,7 +150,7 @@ void MX_I2C1_Init(void) {
 	/* Configure I2C1 */
 	I2C1->CR1 &= ~I2C_CR1_PE;  // Disable I2C1 to configure it
 
-	I2C1->TIMINGR = 0x2000090E; // Configure timing for 100 kHz (assuming HSI clock at 8 MHz)
+	I2C1->TIMINGR = 0x0010020A; // Configure timing for 400 kHz (assuming HSI clock at 8 MHz)
 
 	I2C1->CR1 &= ~I2C_CR1_NOSTRETCH; // Enable clock stretching
 	I2C1->CR1 &= ~I2C_CR1_GCEN;      // Disable general call mode

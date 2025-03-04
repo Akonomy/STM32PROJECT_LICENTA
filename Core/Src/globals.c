@@ -23,17 +23,24 @@ uint8_t rasp_control = 0;
 
 
 
+//PENTRU MODUL DE LUCRU
 
-uint8_t last_state_left = 0;
-uint8_t last_state_right = 0;
-uint8_t last_direction = 0;
-uint8_t history[8] = {0};
-uint8_t DTIndex = 0;
-uint8_t phase = 0;
-uint8_t count_up = 0;
-uint8_t enough_data = 0;
-uint8_t CK_set = 0;
+
+/*
+ * pentru mode = 0 masina se afla in satare iddle si asteapta comenzi de la raspberry pi
+ * pentru mode = 1 masina actioneaza ca si line follower
+ * pentru mode = 2 masina ruleaza
+ *
+ *
+ */
+uint8_t mode =0;
+
+
+
 uint8_t speed = 125;
+
+
+
 
 uint8_t *CK = NULL;
 uint8_t *DT = NULL;

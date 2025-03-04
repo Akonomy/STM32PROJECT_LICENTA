@@ -52,13 +52,69 @@
         // Exemplu de variabilă pentru USART
 uint8_t i2c_slave_address = 0x08;    // Adresa I2C a sclavului
 
+void test_send_packets(void);
+
+
+
+
+void test_send_packets(void) {
+    uint16_t mask;
+    // Vom folosi un array de 8 valori, deoarece vom activa maxim 8 canale simultan
+
+    uint16_t values[8];
+
+    // -------- Test 1: Activează primele 8 canale (canalele 0-7) --------
+    // Mask: 0x00FF => bitii 0-7 sunt activi
+    mask = 0x00FF;
+    // Setăm valori "evidente" pentru fiecare canal activ
+    values[0] = 1000;
+    values[1] = 2000;
+    values[2] = 3000;
+    values[3] = 4000;
+    values[4] = 1000;
+    values[5] = 2000;
+    values[6] = 3000;
+    values[7] = 4000;
+
+    // Transmit pachetul către Arduino
+    I2C_Send_Packet(i2c_slave_address, mask, values, 8);
+
+    // Așteptăm câteva msec pentru a observa efectul
+    DelayWithTimer(500);
+
+    // -------- Test 2: Activează ultimele 8 canale (canalele 8-15) --------
+    // Mask: 0xFF00 => bitii 8-15 sunt activi
+    mask = 0xFF00;
+    // Setăm valori pentru canalele active (putem folosi valori diferite)
+    values[0] = 4000;
+    values[1] = 3000;
+    values[2] = 2000;
+    values[3] = 1000;
+    values[4] = 4000;
+    values[5] = 3000;
+    values[6] = 2000;
+    values[7] = 1000;
+
+    // Transmit pachetul către Arduino
+    I2C_Send_Packet(i2c_slave_address, mask, values, 8);
+
+    DelayWithTimer(500);
+}
+
+
+
 
 
 /* Main ----------------------------------------------------------------------*/
 int main(void)
 {
     uint8_t direction = 0;
-    uint8_t temp_variable[8] = {0};
+
+
+    //DON"T RUN WITH MODE = 1 IN PRODUCTION , this is for debug only, mode should be set by raspberry py
+
+    mode=0;
+
 
 
 
@@ -97,9 +153,8 @@ int main(void)
     while (1)
     {
 
-
-
-
+    	test_send_packets();
+    	DelayWithTimer(200);
 
 
 
@@ -131,6 +186,11 @@ int main(void)
 
 
 
+
+
+
+
+
         /* Dacă s-a detectat o intersecție (CROSS >= 1) se efectuează o virare */
         if (CROSS >= 1)
         {
@@ -144,19 +204,16 @@ int main(void)
         /* Citirea senzorilor și procesarea datelor */
 
 
+        if (mode == 1 ){
 
         read_sensors();   /*uncomment this to read data from sensors*/
-
-
-        DelayWithTimer(15);
 
 
 
 
         /* ARDUINO COMMUNICATION ZONE - Nu modifica */
-
-
         direction = line_process();  /*uncomment this to process data from line sensors*/
+
 
 
 
@@ -164,7 +221,26 @@ int main(void)
 
         SendSingleValue(0x08, speed, direction);   /*uncomment this to send data to arduino*/
 
-        DelayWithTimer(30); // Întârziere înainte de următorul ciclu
+
+
+        DelayWithTimer(15);
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        DelayWithTimer(10); // Întârziere înainte de următorul ciclu
     }
 }
 
