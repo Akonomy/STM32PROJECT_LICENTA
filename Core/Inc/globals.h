@@ -83,8 +83,9 @@ extern uint8_t clockChanged;
 //variables to memorize where to turn after meet a cross
 extern uint8_t direction_cross;
 
+extern const uint16_t directii_implicite[19] ;
 
-
+extern const uint16_t directie_roata[8] ;
 extern volatile uint8_t rxBuffer[RX_BUFFER_SIZE];
 extern volatile uint16_t rxWriteIndex;
 extern volatile uint16_t rxReadIndex;

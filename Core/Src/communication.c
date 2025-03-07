@@ -68,18 +68,34 @@ void SendSingleValue(uint8_t slave_address, uint8_t index, uint16_t value) {
 //  - Următorii N*2 bytes: valorile PWM pentru canalele active, în ordine de la canalul cu număr cel mai mic la cel cu număr cel mai mare,
 //    unde N este numărul de biți setați în mask.
 void I2C_Send_Packet(uint8_t slave_address, uint16_t mask, uint16_t *values, uint8_t numValues) {
-    // Dimensiunea pachetului: 2 bytes pentru mask + 2 bytes pentru fiecare valoare
-    uint8_t packetSize = 2 + (numValues * 2);
-    uint8_t packet[2 + (numValues * 2)];
+    uint8_t activeCount = 0;
+    uint8_t i;
 
-    // Codificăm mask-ul: MSB primul, apoi LSB
+    // Calculează numărul de pini activi din mască (16 biti)
+    for (i = 0; i < 16; i++) {
+        if (mask & (1 << i)) {
+            activeCount++;
+        }
+    }
+
+    // Dimensiunea pachetului: 2 octeți pentru mască + 2 octeți pentru fiecare canal activ
+    uint8_t packetSize = 2 + (activeCount * 2);
+    uint8_t packet[2 + (activeCount * 2)];
+
+    // Codifică masca în format big-endian
     packet[0] = (mask >> 8) & 0xFF; // High byte
     packet[1] = mask & 0xFF;        // Low byte
 
-    // Pentru fiecare valoare, codificăm pe 2 bytes (big-endian)
-    for (uint8_t i = 0; i < numValues; i++) {
-        packet[2 + (i * 2)]     = (values[i] >> 8) & 0xFF; // High byte
-        packet[2 + (i * 2) + 1] = values[i] & 0xFF;          // Low byte
+    // Pentru fiecare canal activ, completează cu valoarea din vector sau cu 2048 dacă nu sunt suficiente
+    for (i = 0; i < activeCount; i++) {
+        uint16_t val;
+        if (i < numValues) {
+            val = values[i];
+        } else {
+            val = 2048;  // Valoare implicită
+        }
+        packet[2 + (i * 2)]     = (val >> 8) & 0xFF; // High byte
+        packet[2 + (i * 2) + 1] = val & 0xFF;          // Low byte
     }
 
     // Transmiterea pachetului prin I2C

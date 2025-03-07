@@ -56,51 +56,30 @@ void test_send_packets(void);
 
 
 
-
 void test_send_packets(void) {
     uint16_t mask;
-    // Vom folosi un array de 8 valori, deoarece vom activa maxim 8 canale simultan
+    uint16_t values[16]={4000,900,900,900};
 
-    uint16_t values[8];
+    // -------- Test 1: Activează pe rând câte un pin de la 0 la 7 la PWM 2048 --------
 
-    // -------- Test 1: Activează primele 8 canale (canalele 0-7) --------
-    // Mask: 0x00FF => bitii 0-7 sunt activi
-    mask = 0x00FF;
-    // Setăm valori "evidente" pentru fiecare canal activ
-    values[0] = 1000;
-    values[1] = 2000;
-    values[2] = 3000;
-    values[3] = 4000;
-    values[4] = 1000;
-    values[5] = 2000;
-    values[6] = 3000;
-    values[7] = 4000;
 
-    // Transmit pachetul către Arduino
-    I2C_Send_Packet(i2c_slave_address, mask, values, 8);
+    for (uint8_t ch = 1; ch < 19; ch++) {
 
-    // Așteptăm câteva msec pentru a observa efectul
-    DelayWithTimer(500);
 
-    // -------- Test 2: Activează ultimele 8 canale (canalele 8-15) --------
-    // Mask: 0xFF00 => bitii 8-15 sunt activi
-    mask = 0xFF00;
-    // Setăm valori pentru canalele active (putem folosi valori diferite)
-    values[0] = 4000;
-    values[1] = 3000;
-    values[2] = 2000;
-    values[3] = 1000;
-    values[4] = 4000;
-    values[5] = 3000;
-    values[6] = 2000;
-    values[7] = 1000;
+        mask=directii_implicite[ch];
 
-    // Transmit pachetul către Arduino
-    I2C_Send_Packet(i2c_slave_address, mask, values, 8);
+        I2C_Send_Packet(i2c_slave_address, mask, values, 4);
+        DelayWithTimer(270);
+        I2C_Send_Packet(i2c_slave_address, mask, values, 4);
+        DelayWithTimer(500);
+        DelayWithTimer(500);
+        DelayWithTimer(500);
+    }
 
-    DelayWithTimer(500);
+
+
+
 }
-
 
 
 
@@ -108,12 +87,12 @@ void test_send_packets(void) {
 /* Main ----------------------------------------------------------------------*/
 int main(void)
 {
-    uint8_t direction = 0;
+
 
 
     //DON"T RUN WITH MODE = 1 IN PRODUCTION , this is for debug only, mode should be set by raspberry py
 
-    mode=0;
+    mode=1;
 
 
 
@@ -153,30 +132,9 @@ int main(void)
     while (1)
     {
 
-    	test_send_packets();
-    	DelayWithTimer(200);
 
 
 
-
-
-/*
-    	for (uint8_t x = 0; x < 21; x++) {
-
-    		for (uint8_t ticks=0; ticks<20; ticks++){
-    			SendSingleValue(0x08, 130, x);
-    			DelayWithTimer(50);
-    		}
-    			DelayWithTimer(500);
-    			SendSingleValue(0x08, 130, 0);
-    			DelayWithTimer(500);
-    			DelayWithTimer(500);
-    			DelayWithTimer(500);
-    			DelayWithTimer(500);
-
-    	}
-
-*/
 
 
 
@@ -209,18 +167,8 @@ int main(void)
         read_sensors();   /*uncomment this to read data from sensors*/
 
 
-
-
         /* ARDUINO COMMUNICATION ZONE - Nu modifica */
-        direction = line_process();  /*uncomment this to process data from line sensors*/
-
-
-
-
-        /* Trimite comanda către Arduino prin I2C */
-
-        SendSingleValue(0x08, speed, direction);   /*uncomment this to send data to arduino*/
-
+        I2C_Send_Packet(i2c_slave_address, 0x0055, line_process(), 4);
 
 
         DelayWithTimer(15);
