@@ -59,9 +59,6 @@ extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
 
 
 
-#define LITTLE_LEFT 19 // little to left (o singura roata)
-#define LITTLE_RIGHT 20 // little to right (o singura roata)
-
 
 //---------------------------< END DIRECTII >-----------------------------------------//
 
@@ -70,13 +67,7 @@ extern uint8_t mode;
 
 extern uint8_t speed;
 
-extern uint8_t *CK;
-extern uint8_t *DT;
 
-extern uint8_t helper[2];
-extern uint8_t lastStateCK;
-extern uint8_t lastStateDT;
-extern uint8_t clockChanged;
 
 
 

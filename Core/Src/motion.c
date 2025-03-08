@@ -95,25 +95,7 @@ void makeTurn(uint8_t direction_x) {
 
 
 
-/*OLD
- *
- *
- * 	 case 1: return "FORWARD";
-	 case 2: return "RIGHT";
-	 case 3: return "LEFT";
-	 case 4: return "SLIGHTLY RIGHT";
-	 case 5: return "SLIGHTLY LEFT";
-	 case 6: return "DIAGONAL RIGHT";
-	 case 7: return "DIAGONAL LEFT";
-	 case 8: return "HARD TURN LEFT";
-	 case 9: return "HARD TURN RIGHT";
-	 case 10: return "LEFT ROTATE";
-	 case 11: return "RIGHT ROTATE";
-	 case 12: return "BACKWARD";
- *
- *
- *
- * */
+
 
 
 

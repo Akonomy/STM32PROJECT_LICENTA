@@ -127,11 +127,8 @@ int main(void)
 
 
 
-
-
     while (1)
     {
-
 
 
 
@@ -141,6 +138,8 @@ int main(void)
     	if (newDataFlag){
     		parse_and_process_data();
     	}
+
+
 
 
 
@@ -164,14 +163,19 @@ int main(void)
 
         if (mode == 1 ){
 
-        read_sensors();   /*uncomment this to read data from sensors*/
+       // read_sensors();   /*uncomment this to read data from sensors*/
+
+
+
+        DriveCommand cmd = line_process();
+
 
 
         /* ARDUINO COMMUNICATION ZONE - Nu modifica */
-        I2C_Send_Packet(i2c_slave_address, 0x0055, line_process(), 4);
+        I2C_Send_Packet(i2c_slave_address, cmd.mask, cmd.speeds, 4);
 
 
-        DelayWithTimer(15);
+        DelayWithTimer(100);
 
         }
 

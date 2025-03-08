@@ -49,6 +49,10 @@ void USART_Send_Array(uint8_t *data, uint16_t length) {
  * @param value2 Pointer to store the second uint8_t value.
  * @return True if successful, false otherwise.
  */
+
+
+
+
 bool USART_Receive_Two_Values(uint8_t *value1, uint8_t *value2) {
 	char buffer[BUFFER_SIZE] = { 0 }; // Temporary buffer for received string
 	uint16_t count = 0;
@@ -86,6 +90,8 @@ bool USART_Receive_Two_Values(uint8_t *value1, uint8_t *value2) {
 
 	return true; // Parsing succeeded
 }
+
+
 
 /**
  * @brief Sends a null-terminated string via USART.

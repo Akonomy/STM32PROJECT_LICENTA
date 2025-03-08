@@ -105,7 +105,3 @@ void I2C_Send_Packet(uint8_t slave_address, uint16_t mask, uint16_t *values, uin
 
 
 
-
-
-
-

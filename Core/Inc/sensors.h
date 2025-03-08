@@ -11,38 +11,34 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Intervalele de viteză și pasul de modificare (în trepte de 250)
-#define VITEZA_MIN           1250
-#define VITEZA_MAX           3500
-#define PAS_VITEZA           250
-
-// Interval recomandat pentru funcționare normală
-#define VITEZA_NORMAL_MIN    1500
-#define VITEZA_NORMAL_MAX    2500
-
-// Prag pentru cicluri fără detectare (ex: 5 cicluri consecutive)
-#define NO_DETECTION_THRESHOLD 5
 
 
 
+// Definirea vitezei de bază și a ajustărilor (modificabile după nevoie)
+#define BASE_SPEED 1200
+static const uint16_t small_adjust = 500;
+static const uint16_t mid_adjust   = 1000;
+static const uint16_t high_adjust  = 1500;
+static const uint16_t max_adjust   = 2000;  // (nu este folosit explicit în condiții, dar poate fi integrat ulterior)
 
-// Structura pentru controlul PID
+// Structura ce va fi returnată: o mască și un vector de 4 viteze
 typedef struct {
-    float KP;
-    float KI;
-    float KD;
-    float eroare_anterioara;
-    float suma_erori;
-} PID_Control;
+    uint16_t mask;
+    uint16_t speeds[4];  // [0]=Fata dreapta, [1]=Fata stânga, [2]=Spate stânga, [3]=Spate dreapta
+} DriveCommand;
 
-// Prototipul funcției PID
-float calculeaza_PID(PID_Control *pid, float eroare, float dt);
+
+
+
+
+
+
+
 
 // Prototipul funcției line_process care calculează vitezele pentru cele 4 grupuri de roți
 // Rezultatul este un vector static de 4 valori:
 // [0] Fata dreapta, [1] Fata stânga, [2] Spate stânga, [3] Spate dreapta.
-uint16_t* line_process(void);
-
+DriveCommand line_process(void);
 
 
 
