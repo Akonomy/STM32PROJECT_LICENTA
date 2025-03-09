@@ -13,12 +13,15 @@
 
 
 
+#define FWD 1
+#define BACK 0
+
 
 // Definirea vitezei de bază și a ajustărilor (modificabile după nevoie)
 #define BASE_SPEED 1200
-static const uint16_t small_adjust = 500;
-static const uint16_t mid_adjust   = 1000;
-static const uint16_t high_adjust  = 1500;
+static const uint16_t small_adjust = 250;
+static const uint16_t mid_adjust   = 500;
+static const uint16_t high_adjust  = 1000;
 static const uint16_t max_adjust   = 2000;  // (nu este folosit explicit în condiții, dar poate fi integrat ulterior)
 
 // Structura ce va fi returnată: o mască și un vector de 4 viteze

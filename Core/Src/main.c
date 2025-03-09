@@ -56,31 +56,6 @@ void test_send_packets(void);
 
 
 
-void test_send_packets(void) {
-    uint16_t mask;
-    uint16_t values[16]={4000,900,900,900};
-
-    // -------- Test 1: Activează pe rând câte un pin de la 0 la 7 la PWM 2048 --------
-
-
-    for (uint8_t ch = 1; ch < 19; ch++) {
-
-
-        mask=directii_implicite[ch];
-
-        I2C_Send_Packet(i2c_slave_address, mask, values, 4);
-        DelayWithTimer(270);
-        I2C_Send_Packet(i2c_slave_address, mask, values, 4);
-        DelayWithTimer(500);
-        DelayWithTimer(500);
-        DelayWithTimer(500);
-    }
-
-
-
-
-}
-
 
 
 
@@ -93,6 +68,7 @@ int main(void)
     //DON"T RUN WITH MODE = 1 IN PRODUCTION , this is for debug only, mode should be set by raspberry py
 
     mode=1;
+    uint16_t values[4]={2000,2000,2000,2000};
 
 
 
@@ -160,25 +136,60 @@ int main(void)
 
         /* Citirea senzorilor și procesarea datelor */
 
+        if (mode == 1) {
+            // read_sensors();   /*uncomment this to read data from sensors*/
 
-        if (mode == 1 ){
+            DriveCommand cmd = line_process();
 
-       // read_sensors();   /*uncomment this to read data from sensors*/
+            // Mecanism de protecție pentru comenzi repetate
+            static DriveCommand prev_cmd = {0};       // stochează ultima comandă trimisă
+            static uint16_t same_cmd_count = 0;         // numără de câte ori a fost primit același cmd consecutiv
+            static uint8_t protection_stage = 0;        // 0: nimic, 1: SetSensorLeft(1) a fost apelată, 2: SetSensorRight(1) a fost apelată
 
+            bool same_cmd = true;
+            // Comparăm cmd.mask
+            if (cmd.mask != prev_cmd.mask) {
+                same_cmd = false;
+            } else {
+                // Comparăm vectorul de viteze pentru toate cele 4 roți
+                for (uint8_t i = 0; i < 4; i++) {
+                    if (cmd.speeds[i] != prev_cmd.speeds[i]) {
+                        same_cmd = false;
+                        break;
+                    }
+                }
+            }
 
+            if (same_cmd) {
+                same_cmd_count++;
+            } else {
+                same_cmd_count = 0;
+                protection_stage = 0;
+                prev_cmd = cmd;
+            }
 
-        DriveCommand cmd = line_process();
+            // Dacă aceeași comandă a fost primită de 50 de ori, apelăm SetSensorLeft(1)
+            if (same_cmd_count >= 50 && protection_stage == 0) {
 
+            	I2C_Send_Packet(i2c_slave_address,0x0009, values, 4);
+            	DelayWithTimer(100);
 
+                protection_stage = 1;
+            }
+            // Dacă aceeași comandă a fost primită de 100 de ori, apelăm SetSensorRight(1)
+            // și blocăm trimiterea comenzii (resetând cmd)
+            else if (same_cmd_count >= 100 && protection_stage == 1) {
+            	I2C_Send_Packet(i2c_slave_address,0x0006, values, 4);
+            	DelayWithTimer(100);
+                protection_stage = 2;
+                same_cmd_count = 0;
+            }
 
-        /* ARDUINO COMMUNICATION ZONE - Nu modifica */
-        I2C_Send_Packet(i2c_slave_address, cmd.mask, cmd.speeds, 4);
+            /* ARDUINO COMMUNICATION ZONE - Nu modifica */
+            I2C_Send_Packet(i2c_slave_address, cmd.mask, cmd.speeds, 4);
 
-
-        DelayWithTimer(100);
-
+            DelayWithTimer(50);
         }
-
 
 
 

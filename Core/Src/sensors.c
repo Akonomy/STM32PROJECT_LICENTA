@@ -57,207 +57,290 @@ void read_sensors() {
 }
 
 
-
-
-// Logica de corecție:
-// 1. Se pornește de la viteza generală (base_speed = 1800).
-// 2. Dacă senzorii laterali (left_line și right_line) sunt activi, se aplică ajustări diferențiate:
-//    - Dacă senzorul mijlociu (mid_line) este activ, ajustarea este redusă;
-//      altfel, se cere o corecție mai agresivă.
-// 3. Senzorii far (far_left_line și far_right_line) au o pondere semnificativă (±300).
-// 4. Dacă ambii senzori far sunt activi, se oprește robotul (toate vitezele = 0).
-// 5. Valorile finale sunt rotunjite la cel mai apropiat multiplu de 100 și limitate între 1500 și 3000.
-
-// Funcția de calcul a comenzii de deplasare
+// Funcția de procesare a liniei
 DriveCommand line_process(void) {
     DriveCommand cmd;
-    // Inițializare viteze cu baza
-    uint16_t speeds[4] = {BASE_SPEED, BASE_SPEED, BASE_SPEED, BASE_SPEED};
-    // Variabile pentru direcția fiecărei roți (1 = înainte, 0 = înapoi)
-    uint8_t fr_dir = 1, fl_dir = 1, bl_dir = 1, br_dir = 1;
+
+    // Inițializare viteze pentru cele 4 roți:
+    // speed[0] - roata față dreapta
+    // speed[1] - roata față stânga
+    // speed[2] - roata spate stânga
+    // speed[3] - roata spate dreapta
+    uint16_t speed[4] = {
+        BASE_SPEED, // față dreapta: viteză de bază
+        BASE_SPEED, // față stânga: viteză de bază
+        BASE_SPEED, // spate stânga: viteză de bază
+        BASE_SPEED  // spate dreapta: viteză de bază
+    };
+
+    // Inițializare direcții pentru cele 4 roți (implicit FWD)
+    uint8_t dir[4] = {
+        FWD, // față dreapta: directie înainte
+        FWD, // față stânga: directie înainte
+        FWD, // spate stânga: directie înainte
+        FWD  // spate dreapta: directie înainte
+    };
+
     uint16_t mask = 0;
 
-    // Variabile statice pentru mecanismul de „recuperare” / PID
-    static uint8_t last_error = 0;
-    static uint8_t lost_count = 0;
+    // Variabile statice pentru mecanismul de "recuperare" / PID
+    static int8_t last_error  = 0;
+    static int8_t last_active = 0;
+    static uint8_t lost_count = 0;  // numărul de cicluri fără detecție a liniei
 
     // Actualizează vectorul global de senzori
     read_sensors();
 
-    // Obținem valorile booleene pentru senzorii de linie
-    // (senzor activ = detectează linia, deci valoare 1, deoarece se folosește operatorul '!')
-    uint8_t far_left_line  = !sensor_data[4];  // Senzor stânga-extrem
-    uint8_t left_line      = !sensor_data[0];  // Senzor stânga
-    uint8_t mid_line       = !sensor_data[1];  // Senzor mijloc
-    uint8_t right_line     = !sensor_data[3];  // Senzor dreapta
-    uint8_t far_right_line = !sensor_data[6];  // Senzor dreapta-extrem
+    // Citim senzorii de linie (senzor activ = detectează linia → valoare 1)
+    uint8_t far_left_line  = !sensor_data[4];  // senzor stânga-extrem
+    uint8_t left_line      = !sensor_data[0];  // senzor stânga
+    uint8_t mid_line       = !sensor_data[1];  // senzor mijloc
+    uint8_t right_line     = !sensor_data[3];  // senzor dreapta
+    uint8_t far_right_line = !sensor_data[6];  // senzor dreapta-extrem
 
-    // Dacă toți senzorii sunt activi → CROSS (situație de tip "all active")
-    if(far_left_line && left_line && mid_line && right_line && far_right_line) {
-         CROSS = 1;
-         // Toți senzorii activi: situație ambiguă → STOP
-         cmd.mask = 0x0000;
-         for (int i = 0; i < 4; i++) {
-             cmd.speeds[i] = 0;
-         }
-         return cmd;
+    // ------------------------------
+    // Cazuri speciale de oprire
+    // 1. Toți senzorii activi (CROSS): STOP
+    if (far_left_line && left_line && mid_line && right_line && far_right_line) {
+        CROSS = 1;
+        cmd.mask = 0x0000;
+        for (uint8_t i = 0; i < 4; i++) {
+            speed[i] = 0;
+        }
+        return cmd;
     } else {
-         CROSS = 0;
+        CROSS = 0;
     }
 
-    // Caz special: dacă doar senzorii extreme (far left și far right) sunt activi (fără alți senzori) → STOP
-    if(far_left_line && far_right_line && !left_line && !mid_line && !right_line) {
-
-
-         cmd.mask = 0x0000;
-         for (int i = 0; i < 4; i++) {
-             cmd.speeds[i] = 0;
-         }
-         return cmd;
+    // 2. Doar senzorii extreme (far left și far right) activi → STOP
+    if (far_left_line && far_right_line && !left_line && !mid_line && !right_line) {
+        cmd.mask = 0x0000;
+        for (uint8_t i = 0; i < 4; i++) {
+            speed[i] = 0;
+        }
+        return cmd;
     }
+    // ------------------------------
 
     // Dacă niciun senzor nu este activ
-    if(!far_left_line && !left_line && !mid_line && !right_line && !far_right_line) {
-         // Dacă nu avem istoric (s-a pierdut linia de prea multe ori), oprim robotul
-         if(lost_count >= 10) {
+    if (!far_left_line && !left_line && !mid_line && !right_line && !far_right_line) {
+        if (lost_count >= 10) {
+            SetSensorRight(1);
+            DelayWithTimer(200);
+            SetSensorRight(0);
 
-        	 SetSensorRight(1);
-        	 DelayWithTimer(200);
-        	 SetSensorRight(0);
-             cmd.mask = 0x0000;
-             for (int i = 0; i < 4; i++) {
-                 cmd.speeds[i] = 0;
-             }
-             return cmd;
-         } else {
-             lost_count++;
-             // Folosim ultimul error calculat pentru a "snifa" direcția unde a fost linia ultima dată
-             if(last_error > 0) {
-                 // Ultima linie detectată era pe partea dreaptă → virare spre dreapta
-                 // Setăm: roata față dreapta merge înainte cu viteza BASE_SPEED + mid_adjust,
-                 // iar roata față stânga se inversează
-                 fr_dir = 1;      // înainte
-                 fl_dir = 0;      // înapoi
-                 speeds[0] = BASE_SPEED + mid_adjust;
-                 speeds[1] = BASE_SPEED + mid_adjust;
-             } else if(last_error < 0) {
-                 // Ultima linie detectată era pe partea stângă → virare spre stânga
-                 fl_dir = 1;      // înainte
-                 fr_dir = 0;      // înapoi
-                 speeds[1] = BASE_SPEED + mid_adjust;
-                 speeds[0] = BASE_SPEED + mid_adjust;
-             }
-             // Rotile din spate rămân înainte la viteza de bază
-         }
+            cmd.mask = 0x0000;
+            for (uint8_t i = 0; i < 4; i++) {
+                speed[i] = 0;
+            }
+            return cmd;
+        } else {
+            lost_count++;
+            // Folosim ultimul senzor activ pentru a decide direcția de recuperare:
+            // Dacă last_active > 0 → căutare spre dreapta, altfel spre stânga.
+            if (last_active > 0) {
+                // Căutare spre dreapta:
+                speed[0] = BASE_SPEED + mid_adjust;  // față dreapta: + mid_adjust
+                speed[1] = BASE_SPEED + mid_adjust;  // față stânga: + mid_adjust
+                speed[2] = BASE_SPEED - small_adjust;           // spate stânga: +0
+                speed[3] = BASE_SPEED - small_adjust;           // spate dreapta: +0
+
+                dir[0] = FWD;  // față dreapta: directie înainte
+                dir[1] = BACK; // față stânga: inversare (întoarce)
+                dir[2] = BACK;  // spate stânga: directie înainte
+                dir[3] = FWD;  // spate dreapta: directie înainte
+            } else if (last_active < 0) {
+                // Căutare spre stânga:
+                speed[0] = BASE_SPEED + mid_adjust;  // față dreapta: + mid_adjust
+                speed[1] = BASE_SPEED + mid_adjust;  // față stânga: + mid_adjust
+                speed[2] = BASE_SPEED - small_adjust;           // spate stânga: +0
+                speed[3] = BASE_SPEED - small_adjust;           // spate dreapta: +0
+
+                dir[0] = BACK; // față dreapta: inversare (întoarce)
+                dir[1] = FWD;  // față stânga: directie înainte
+                dir[2] = FWD;  // spate stânga: directie înainte
+                dir[3] = BACK;  // spate dreapta: directie înainte
+            }
+            // Ieșim din blocul "lost" fără a continua cu celelalte condiții
+        }
     } else {
-         // Dacă cel puțin un senzor este activ, resetăm contorul de pierdere
-         lost_count = 0;
-         // Calculăm o eroare bazată pe senzorii activi (ponderi: far_left=-2, left=-1, mid=0, right=+1, far_right=+2)
-         int sum = 0, count = 0;
-         if(far_left_line) { sum += -2; count++; }
-         if(left_line)     { sum += -1; count++; }
-         if(mid_line)      { sum += 0;  count++; }
-         if(right_line)    { sum += 1;  count++; }
-         if(far_right_line){ sum += 2;  count++; }
-         int error = (count > 0) ? (sum / count) : 0;
-         last_error = error;
+        // Resetăm contorul de pierdere
+        lost_count = 0;
 
-         // Se evaluează cazurile discrete:
+        // Calculăm eroarea bazată pe senzorii activi (ponderi: far_left=-2, left=-1, mid=0, right=+1, far_right=+2)
+        int8_t sum = 0;
+        uint8_t count = 0;
+        if (far_left_line)  { sum += -2; count++; }
+        if (left_line)      { sum += -1; count++; }
+        if (mid_line)       { sum +=  0; count++; }
+        if (right_line)     { sum +=  1; count++; }
+        if (far_right_line) { sum +=  2; count++; }
+        int8_t error = (count > 0) ? (sum / count) : 0;
+        last_error  = error;
+        last_active = error;
 
-         // 1. Doar mid activ: merge înainte
-         if(mid_line && !left_line && !right_line && !far_left_line && !far_right_line) {
-             // Fiecare roată: direcție înainte la viteza BASE_SPEED
-         }
-         // 2. mid + right: linie la mijloc și dreapta → ajustare ușoară spre dreapta
-         else if(mid_line && right_line && !left_line && !far_left_line && !far_right_line) {
-             speeds[0] = BASE_SPEED + mid_adjust; // roata față dreapta crește
-             speeds[1] = BASE_SPEED - mid_adjust; // roata față stânga scade
-         }
-         // 3. mid + left: linie la mijloc și stânga → ajustare ușoară spre stânga
-         else if(mid_line && left_line && !right_line && !far_left_line && !far_right_line) {
-             speeds[1] = BASE_SPEED + mid_adjust; // roata față stânga crește
-             speeds[0] = BASE_SPEED - mid_adjust; // roata față dreapta scade
-         }
-         // 4. Doar right: linie doar la dreapta → virare spre dreapta
-         //    (roata față dreapta se accelerează, roata față stânga se inversează la viteza de bază)
-         else if(right_line && !mid_line && !left_line && !far_left_line && !far_right_line) {
-             speeds[0] = BASE_SPEED + high_adjust;
-             fl_dir = 0;
-         }
-         // 5. Doar left: linie doar la stânga → virare spre stânga
-         //    (roata față stânga se accelerează, roata față dreapta se inversează la viteza de bază)
-         else if(left_line && !mid_line && !right_line && !far_left_line && !far_right_line) {
-             speeds[1] = BASE_SPEED + high_adjust;
-             fr_dir = 0;
-         }
-         // 6. right + far right: linie la dreapta și dreapta-extrem → rotire puternică spre dreapta
-         //    (roțile din dreapta cresc cu high_adjust, roata față stânga se inversează)
-         else if(right_line && far_right_line && !mid_line && !left_line && !far_left_line) {
-             speeds[0] = BASE_SPEED + max_adjust; // față dreapta
-             speeds[3] = BASE_SPEED + high_adjust; // spate dreapta
-             fl_dir = 0;
-         }
-         // 7. left + far left: linie la stânga și stânga-extrem → rotire puternică spre stânga
-         //    (roțile din stânga cresc cu high_adjust, roata față dreapta se inversează)
-         else if(left_line && far_left_line && !mid_line && !right_line && !far_right_line) {
-             speeds[1] = BASE_SPEED + max_adjust; // față stânga
-             speeds[2] = BASE_SPEED + high_adjust; // spate stânga
-             fr_dir = 0;
-         }
-         // 8. Doar far right: linie doar la dreapta-extrem → ajustare spre dreapta
-         //    (față și spate dreapta cresc cu mid_adjust; față și spate stânga se inversează la BASE_SPEED + mid_adjust)
-         else if(far_right_line && !right_line && !mid_line && !left_line && !far_left_line) {
-             speeds[0] = BASE_SPEED + max_adjust; // față dreapta
-             speeds[3] = BASE_SPEED + max_adjust; // spate dreapta
-             fl_dir = 0;  // față stânga invers
-             // Setăm roata spate stânga ca și inversată (dacă e cazul)
-             // (aici o alegere; se poate ajusta după nevoie)
-             // Exemplu: dacă dorești să inversezi și spatele stânga:
-             // bl_dir = 0;
-             speeds[2] = BASE_SPEED + mid_adjust;
-         }
-         // 9. Doar far left: linie doar la stânga-extrem → ajustare spre stânga
-         //    (față și spate stânga cresc cu mid_adjust; față și spate dreapta se inversează la BASE_SPEED + mid_adjust)
-         else if(far_left_line && !left_line && !mid_line && !right_line && !far_right_line) {
-             speeds[1] = BASE_SPEED + max_adjust; // față stânga
-             speeds[2] = BASE_SPEED + max_adjust; // spate stânga
-             fr_dir = 0;  // față dreapta invers
-             speeds[3] = BASE_SPEED + mid_adjust; // spate dreapta invers
-         }
-         // Dacă nicio condiție discretă nu se potrivește, aplicăm o corecție PID simplă:
-         else {
-             int correction = error * 200; // Factorul Kp=100 (ajustabil)
-             speeds[0] = BASE_SPEED + correction;  // față dreapta primește corecția pozitivă
-             speeds[1] = BASE_SPEED - correction;  // față stânga primește corecția negativă
-         }
+        // ------------------------------
+        // Structurarea cazurilor de deplasare:
+        // 1. Doar senzorul mijloc activ: merge înainte, fără ajustări
+        if (mid_line && !left_line && !right_line && !far_left_line && !far_right_line) {
+            speed[0] = BASE_SPEED + 0;  // față dreapta: +0
+            speed[1] = BASE_SPEED + 0;  // față stânga: +0
+            speed[2] = BASE_SPEED + 0;  // spate stânga: +0
+            speed[3] = BASE_SPEED + 0;  // spate dreapta: +0
+
+            dir[0] = FWD; // față dreapta: directie înainte
+            dir[1] = FWD; // față stânga: directie înainte
+            dir[2] = FWD; // spate stânga: directie înainte
+            dir[3] = FWD; // spate dreapta: directie înainte
+        }
+        // 2. Mijloc + dreapta: ajustare ușoară spre dreapta
+        else if (mid_line && right_line && !left_line && !far_left_line && !far_right_line) {
+            speed[0] = BASE_SPEED + small_adjust;  // față dreapta: +mid_adjust
+            speed[1] = BASE_SPEED - small_adjust;  // față stânga: -mid_adjust
+            speed[2] = BASE_SPEED + 0;           // spate stânga: +0
+            speed[3] = BASE_SPEED + 0;           // spate dreapta: +0
+
+            dir[0] = FWD; // față dreapta: directie înainte
+            dir[1] = FWD; // față stânga: directie înainte
+            dir[2] = FWD; // spate stânga: directie înainte
+            dir[3] = FWD; // spate dreapta: directie înainte
+        }
+        // 3. Mijloc + stânga: ajustare ușoară spre stânga
+        else if (mid_line && left_line && !right_line && !far_left_line && !far_right_line) {
+            speed[0] = BASE_SPEED - small_adjust;  // față dreapta: -mid_adjust
+            speed[1] = BASE_SPEED + small_adjust;  // față stânga: +mid_adjust
+            speed[2] = BASE_SPEED + 0;           // spate stânga: +0
+            speed[3] = BASE_SPEED + 0;           // spate dreapta: +0
+
+            dir[0] = FWD; // față dreapta: directie înainte
+            dir[1] = FWD; // față stânga: directie înainte
+            dir[2] = FWD; // spate stânga: directie înainte
+            dir[3] = FWD; // spate dreapta: directie înainte
+        }
+        // 4. Doar dreapta: virare spre dreapta
+        else if (right_line && !mid_line && !left_line && !far_left_line && !far_right_line) {
+            speed[0] = BASE_SPEED + mid_adjust; // față dreapta: +high_adjust
+            speed[1] = BASE_SPEED + mid_adjust;           // față stânga: +0
+            speed[2] = BASE_SPEED - small_adjust;           // spate stânga: +0
+            speed[3] = BASE_SPEED - small_adjust;           // spate dreapta: +0
+
+            // Inversăm roata față stânga
+            dir[0] = FWD;  // față dreapta: directie înainte
+            dir[1] = BACK; // față stânga: inversare (întoarce)
+            dir[2] = FWD;  // spate stânga: directie înainte
+            dir[3] = FWD;  // spate dreapta: directie înainte
+        }
+        // 5. Doar stânga: virare spre stânga
+        else if (left_line && !mid_line && !right_line && !far_left_line && !far_right_line) {
+            speed[0] = BASE_SPEED + mid_adjust;           // față dreapta: +0
+            speed[1] = BASE_SPEED + mid_adjust; // față stânga: +high_adjust
+            speed[2] = BASE_SPEED - small_adjust;           // spate stânga: +0
+            speed[3] = BASE_SPEED - small_adjust;           // spate dreapta: +0
+
+            // Inversăm roata față dreapta
+            dir[0] = BACK; // față dreapta: inversare (întoarce)
+            dir[1] = FWD;  // față stânga: directie înainte
+            dir[2] = FWD;  // spate stânga: directie înainte
+            dir[3] = FWD;  // spate dreapta: directie înainte
+        }
+        // 6. Dreapta + dreapta-extrem: virare puternică spre dreapta
+        else if (right_line && far_right_line && !mid_line && !left_line && !far_left_line) {
+            speed[0] = BASE_SPEED ;  // față dreapta: +max_adjust
+            speed[1] = BASE_SPEED ;           // față stânga: +0
+            speed[2] = BASE_SPEED + mid_adjust;           // spate stânga: +0
+            speed[3] = BASE_SPEED + mid_adjust; // spate dreapta: +high_adjust
+
+            // Inversăm roata față stânga
+            dir[0] = FWD;  // față dreapta: directie înainte
+            dir[1] = BACK; // față stânga: inversare (întoarce)
+            dir[2] = FWD;  // spate stânga: directie înainte
+            dir[3] = BACK;  // spate dreapta: directie înainte
+        }
+        // 7. Stânga + stânga-extrem: virare puternică spre stânga
+        else if (left_line && far_left_line && !mid_line && !right_line && !far_right_line) {
+            speed[0] = BASE_SPEED ;         // față dreapta: +0
+            speed[1] = BASE_SPEED ;  // față stânga: +max_adjust
+            speed[2] = BASE_SPEED + mid_adjust; // spate stânga: +high_adjust
+            speed[3] = BASE_SPEED + mid_adjust;           // spate dreapta: +0
+
+            // Inversăm roata față dreapta
+            dir[0] = BACK; // față stanga: inversare (întoarce)
+            dir[1] = FWD;  // față dreapta: directie înainte
+            dir[2] = BACK;  // spate stânga: directie înainte
+            dir[3] = FWD;  // spate dreapta: directie înainte
+        }
+        // 8. Doar dreapta-extrem: ajustare spre dreapta
+        else if (far_right_line && !right_line && !mid_line && !left_line && !far_left_line) {
+            speed[0] = BASE_SPEED - mid_adjust;  // față dreapta: +max_adjust
+            speed[1] = BASE_SPEED - mid_adjust;           // față stânga: +0 (se inversează)
+            speed[2] = BASE_SPEED + mid_adjust;  // spate stânga: +mid_adjust
+            speed[3] = BASE_SPEED + mid_adjust;  // spate dreapta: +max_adjust
+
+            dir[0] = FWD;  // față dreapta: directie înainte
+            dir[1] = BACK; // față stânga: inversare (întoarce)
+            dir[2] = FWD;  // spate stânga: directie înainte
+            dir[3] = BACK;  // spate dreapta: directie înainte
+        }
+        // 9. Doar stânga-extrem: ajustare spre stânga
+        else if (far_left_line && !left_line && !mid_line && !right_line && !far_right_line) {
+            speed[0] = BASE_SPEED - mid_adjust;           // față dreapta: +0 (se inversează)
+            speed[1] = BASE_SPEED - mid_adjust;  // față stânga: +max_adjust
+            speed[2] = BASE_SPEED + mid_adjust;  // spate stânga: +max_adjust
+            speed[3] = BASE_SPEED + mid_adjust;  // spate dreapta: +mid_adjust
+
+            dir[0] = BACK; // față dreapta: inversare (întoarce)
+            dir[1] = FWD;  // față stânga: directie înainte
+            dir[2] = BACK;  // spate stânga: directie înainte
+            dir[3] = FWD; // spate dreapta: inversare (întoarce)
+        }
+        // 10. Alte situații – folosim corecția PID
+        else {
+            int8_t correction = error * 200; // Kp ajustabil
+            speed[0] = BASE_SPEED + correction; // față dreapta: corecție
+            speed[1] = BASE_SPEED - correction; // față stânga: corecție
+            speed[2] = BASE_SPEED + 0;          // spate stânga: +0
+            speed[3] = BASE_SPEED + 0;          // spate dreapta: +0
+
+            dir[0] = FWD; // față dreapta: directie înainte
+            dir[1] = FWD; // față stânga: directie înainte
+            dir[2] = FWD; // spate stânga: directie înainte
+            dir[3] = FWD; // spate dreapta: directie înainte
+        }
+        // ------------------------------
     }
 
-
-
-    // Verificare: vitezele trebuie să fie fie 0, fie în intervalul 901-4000
-    for (int i = 0; i < 4; i++) {
-        if (speeds[i] != 0) {
-            if (speeds[i] < 301) {
-                speeds[i] = 301;
-            } else if (speeds[i] > 4000) {
-                speeds[i] = 4000;
+    // Verificare: vitezele nenule trebuie să fie în intervalul 301-4000
+    for (uint8_t i = 0; i < 4; i++) {
+        if (speed[i] != 0) {
+            if (speed[i] < 101) {
+                speed[i] = 101;
+            } else if (speed[i] > 4000) {
+                speed[i] = 4000;
             }
         }
     }
 
-
-    // Construim masca finală folosind direcția fiecărei roți:
-    mask |= (fr_dir ? directie_roata[0] : directie_roata[1]);
-    mask |= (fl_dir ? directie_roata[2] : directie_roata[3]);
-    mask |= (bl_dir ? directie_roata[4] : directie_roata[5]);
-    mask |= (br_dir ? directie_roata[6] : directie_roata[7]);
+    // Construim masca finală pe baza direcțiilor pentru cele 4 roți.
+    // directie_roata[] conține bitii pentru fiecare roată:
+    // [0] - față dreapta FWD, [1] - față dreapta BACK,
+    // [2] - față stânga FWD, [3] - față stânga BACK,
+    // [4] - spate stânga FWD, [5] - spate stânga BACK,
+    // [6] - spate dreapta FWD, [7] - spate dreapta BACK.
+    mask |= (dir[0] ? directie_roata[0] : directie_roata[1]);
+    mask |= (dir[1] ? directie_roata[2] : directie_roata[3]);
+    mask |= (dir[2] ? directie_roata[4] : directie_roata[5]);
+    mask |= (dir[3] ? directie_roata[6] : directie_roata[7]);
 
     cmd.mask = mask;
-    for (int i = 0; i < 4; i++) {
-         cmd.speeds[i] = speeds[i];
+
+    // Asignăm vitezele pentru fiecare roată (folosind speed[0] ... speed[3])
+    for (uint8_t i = 0; i < 4; i++) {
+        cmd.speeds[i] = speed[i];
     }
+
     return cmd;
 }
+
 
 
 
