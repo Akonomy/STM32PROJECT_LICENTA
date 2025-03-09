@@ -20,7 +20,7 @@
  * @param tick      Reprezintă numărul de "ticks" (DATA2) - interval valid: 1 până la 10.
  * @param speed     Reprezintă viteza mașinii (DATA3) - interval valid: 30 până la 150.
  */
-void control_car(uint8_t direction, uint8_t tick, uint8_t speed);
+void control_car(uint8_t direction, uint8_t tick, uint16_t speed[4]);
 
 /**
  * @brief Controlează un servo.
@@ -61,7 +61,6 @@ void save_next_cross_direction(uint8_t direction);
 
 
 
-void debug_mode(uint8_t code, uint8_t ticks, uint8_t speed);
 
 
 
@@ -80,7 +79,7 @@ void debug_mode(uint8_t code, uint8_t ticks, uint8_t speed);
  * @param data2  Al doilea parametru (DATA2)
  * @param data3  Al treilea parametru (DATA3)
  */
-void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t data3);
+void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2,uint8_t vector[4]);
 
 
 

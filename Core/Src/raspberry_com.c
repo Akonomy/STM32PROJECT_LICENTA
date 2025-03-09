@@ -33,56 +33,27 @@
  *  - tick: reprezintă numărul de "ticks" (1-10)
  *  - speed: reprezintă viteza mașinii (30-150)
  */
-void control_car(uint8_t direction, uint8_t tick, uint8_t speed) {
+void control_car(uint8_t direction, uint8_t tick, uint16_t speed[4]) {
 
 	   SetSensorRight(1);
 	    SetSensorLeft(1);
     // Verificare parametri
+
+	if (tick == 0 || direction==0){
+		 I2C_Send_Packet(i2c_slave_address,0x0000 ,0, 4);
+		 return;
+	}
     if (direction > 20) {
         // Eroare: direcția este în afara intervalului permis (0-12)
         return;
     }
-    if (tick < 1 || tick > 20) {
+    if (tick>30) {
         // Eroare: tick-ul este în afara intervalului permis (1-10)
         return;
     }
-    if (speed < 30 || speed > 200) {
-        // Eroare: viteza este în afara intervalului permis (30-150)
-        return;
-    }
 
 
 
-	/*  max_x-times  direction_x in direction x
-	 *  ARDUINO DIRECTIONS MAP , FOR GO() FUNCTION
-    case 0:  return 0b00000000; // STOP
-    case 1:  return 0b01010101; // INAINTE (FORWARD)
-    case 2:  return 0b10101010; // INAPOI (BACKWARD)
-    case 3:  return 0b00001001; // DREAPTA-FATA (FRONT-RIGHT)
-    case 4:  return 0b00000110; // STANGA-FATA (FRONT-LEFT)
-    case 5:  return 0b10010000; // spatele se misca in dreapta (BACK-RIGHT)
-    case 6:  return 0b01100000; // spatele se misca in stanga (BACK-LEFT)
-    case 7:  return 0b01101001; // ROTIRE DREAPTA (ROTATE RIGHT)
-    case 8:  return 0b10010110; // ROTIRE STANGA (ROTATE LEFT)
-    case 9:  return 0b10011001; // LATERALA DREAPTA (SIDE-RIGHT)
-    case 10: return 0b01100110; // LATERALA STANGA (SIDE-LEFT)
-    case 11: return 0b01000001; // hard turn dreapta (HARD RIGHT TURN)
-    case 12: return 0b00010100; // hard turn stanga (HARD LEFT TURN)
-    case 13: return 0b10000010; // hard turn stanga miscare spate inapoi
-    case 14: return 0b00101000; // hard turn dreapta miscare spate inapoi
-    case 15: return 0b00010001; // diagonala stanga fata (DIAGONAL FRONT-LEFT)
-    case 16: return 0b00100010; // diagonala spate dreapta (DIAGONAL BACK-RIGHT)
-    case 17: return 0b01000100; // diagonala dreapta fata (DIAGONAL FRONT-RIGHT)
-    case 18: return 0b10001000; // diagonala spate stanga (DIAGONAL BACK-LEFT)
-
-      //SPECIAL CASE
-
-    case 19: return 0b00000001; // little to left (o singura roata)
-    case 20: return 0b00000010; // little to right (o singura roata)
-
-
-	 *
-	 */
 
     uint8_t delay_movement =105;
 
@@ -91,9 +62,9 @@ void control_car(uint8_t direction, uint8_t tick, uint8_t speed) {
     }
 	for (uint8_t x = 0; x < tick; x++) {
 
-		SendSingleValue(0x08, speed, direction);
-		DelayWithTimer(delay_movement);
-		SendSingleValue(0x08, speed, 0);
+		 I2C_Send_Packet(i2c_slave_address, directii_implicite[direction] , speed, 4);
+		 DelayWithTimer(delay_movement);
+		 I2C_Send_Packet(i2c_slave_address, 0x0000,0, 4);
 
 	}
 
@@ -233,28 +204,6 @@ void save_next_cross_direction(uint8_t direction) {
 
 
 
-void debug_mode(uint8_t code, uint8_t ticks, uint8_t speed) {
-    // Verifică condiția specială
-    if (code == 4 && ticks == 1 && speed == 3) {
-    	SendSingleValue(0x08, 7, (53 << 8) | 54);  // Trimite valori speciale
-
-        SetSensorRight(1);
-           SetSensorLeft(1);
-           DelayWithTimer(50);
-           SetSensorRight(0);
-           SetSensorLeft(0);
-
-        return;  // Oprește execuția funcției după acest caz
-    }
-
-    // Execută comportamentul normal dacă nu se îndeplinește condiția specială
-    for (uint8_t x = 0; x < ticks; x++) {
-        SendSingleValue(0x08, speed, code);
-        DelayWithTimer(100);
-        SendSingleValue(0x08, speed, 0);
-    }
-}
-
 
 
 
@@ -283,47 +232,38 @@ void debug_mode(uint8_t code, uint8_t ticks, uint8_t speed) {
  *   - TYPE 3: request_data(data1)
  *   - TYPE 4: save_next_cross_direction(data1)
  */
-void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t data3) {
-
-
-	    // Trimiterea pachetului prin USART
-
-/* DEBUG ONLY *//*
-
-	    USART_Send_Byte(type);
-	    USART_Send_Byte(data1);
-	    USART_Send_Byte(data2);
-	    USART_Send_Byte(data3);
-
-*/
-
-
+void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t vector[4]) {
     switch(type) {
         case 1:
-            // TYPE 1: Control Car
-            control_car(data1, data2, data3);
+        {
+            // Tipul 1: Control Car
+            // Convertim valorile din vector la uint16_t prin înmulțire cu 16
+            uint16_t convVector[4];
+            for (int i = 0; i < 4; i++) {
+                convVector[i] = vector[i] * 16;
+            }
+            // Se presupune că funcția control_car a fost modificată pentru a primi un vector de uint16_t.
+            control_car(data1, data2, convVector);
             break;
+        }
         case 2:
-            // TYPE 2: Control Servo
+            // Tipul 2: Control Servo
             control_servo(data1, data2);
             break;
         case 3:
-            // TYPE 3: Request Data
+            // Tipul 3: Request Data
             request_data(data1);
             break;
         case 4:
-            // TYPE 4: Save Next Cross Direction
+            // Tipul 4: Save Next Cross Direction
             save_next_cross_direction(data1);
             break;
-
-
-        case 5:
-        	debug_mode(data1, data2, data3);
         default:
-            // Tip de comandă necunoscut - nu se realizează nicio acțiune
+            // Tip de comandă necunoscut - nu se realizează nicio acțiune.
             break;
     }
 }
+
 
 
 
@@ -336,26 +276,21 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t data3
 
 void parse_and_process_data(void)
 {
-
-	currentTime = get_system_time_ms();
-
+    currentTime = get_system_time_ms();
 
     // Verifică intervalul minim între procesări pentru a evita "spam"-ul de mesaje.
     if ((currentTime - lastProcessTime) < MIN_PROCESS_INTERVAL)
     {
         RingBuffer_Clear();
         SetSensorRight(1);
-       	DelayWithTimer(250);
-       	SetSensorRight(0);
-       	lastProcessTime = currentTime;
-
-
-
+        DelayWithTimer(250);
+        SetSensorRight(0);
+        lastProcessTime = currentTime;
         return;
     }
-     // Actualizează timpul ultimei procesări
+    // Actualizează timpul ultimei procesări
 
-    char message[50] = {0};         // Buffer local pentru mesaj
+    char message[50] = {0};  // Buffer local pentru mesaj
     int msgOffset = 0;
 
     // Caută markerul de început '<' în ring buffer.
@@ -370,7 +305,7 @@ void parse_and_process_data(void)
         }
     }
 
-    // Dacă nu s-a găsit markerul de început, se consideră mesaj invalid.
+    // Dacă nu s-a găsit markerul de început, mesajul este invalid.
     if (msgOffset == 0)
     {
         RingBuffer_Clear();
@@ -390,7 +325,7 @@ void parse_and_process_data(void)
             break;
         }
     }
-    message[msgOffset] = '\0';  // Asigură terminarea cu null a șirului
+    message[msgOffset] = '\0';  // Terminare cu null
 
     // Dacă nu s-a găsit markerul de sfârșit, mesajul este incomplet.
     if (!endMarkerFound)
@@ -406,32 +341,99 @@ void parse_and_process_data(void)
         return;
     }
 
-    // Elimină caracterele de delimitare: transformă '>' în '\0' și setează un pointer la interiorul mesajului.
+    // Elimină markerul de sfârșit '>' și setează un pointer la interiorul mesajului.
     message[msgOffset - 1] = '\0';
     char *innerMessage = message + 1;  // Sărim peste caracterul '<'
 
-    // Tokenizează șirul interior; se permit până la 5 token-uri, dar se folosesc primele 4.
-    uint8_t values[5] = {0};
-    int count = 0;
+    // Se așteaptă formatul: val1 val2 val3 [vector]
+    // Tokenizează primele 3 valori folosind spațiul ca delimitator.
     char *token = strtok(innerMessage, " ");
-    while (token != NULL && count < 5)
+    if (token == NULL)
     {
-        values[count++] = (uint8_t)atoi(token);
+        RingBuffer_Clear();
+        return;
+    }
+    uint8_t val1 = (uint8_t)atoi(token);
+
+    token = strtok(NULL, " ");
+    if (token == NULL)
+    {
+        RingBuffer_Clear();
+        return;
+    }
+    uint8_t val2 = (uint8_t)atoi(token);
+
+    token = strtok(NULL, " ");
+    if (token == NULL)
+    {
+        RingBuffer_Clear();
+        return;
+    }
+    uint8_t val3 = (uint8_t)atoi(token);
+
+    // Acum se caută secvența vectorului, care trebuie să înceapă cu '['.
+    token = strtok(NULL, ""); // Rămâne restul șirului, inclusiv spațiile, pentru a putea găsi '['
+    if (token == NULL)
+    {
+        RingBuffer_Clear();
+        return;
+    }
+
+    // Caută începutul secvenței de vector
+    char *vecStart = strchr(token, '[');
+    if (vecStart == NULL)
+    {
+        RingBuffer_Clear();
+        return;
+    }
+    vecStart++;  // Sărim peste '['
+
+    // Caută sfârșitul secvenței vector (caracterul ']')
+    char *vecEnd = strchr(vecStart, ']');
+    if (vecEnd == NULL)
+    {
+        RingBuffer_Clear();
+        return;
+    }
+    *vecEnd = '\0';  // Înlocuiește ']' cu '\0' pentru a avea un subșir curat
+
+    // Acum, vecString conține conținutul din interiorul parantezelor, de ex: "255 255 255 255" sau "255"
+    // Folosim strtok pentru a obține token-urile din vector, folosind ca delimitatori spațiile.
+    uint8_t vector[4] = {0};
+    int vecCount = 0;
+    token = strtok(vecStart, " ");
+    while (token != NULL && vecCount < 4)
+    {
+        vector[vecCount++] = (uint8_t)atoi(token);
         token = strtok(NULL, " ");
     }
 
-    // Asigură că avem cel puțin 4 token-uri; completează cu zero dacă e necesar.
-    while (count < 4)
+    // Dacă vectorul conține doar un element, replică-l pe toate cele 4 poziții.
+    if (vecCount == 1)
     {
-        values[count++] = 0;
+        vector[1] = vector[0];
+        vector[2] = vector[0];
+        vector[3] = vector[0];
+    }
+    else if (vecCount != 4)
+    {
+        // Dacă numărul de elemente nu e 1 sau 4, poți alege să:
+        // - Completezi cu zerouri,
+        // - Folosești doar primele 4, sau
+        // - Marci mesajul ca invalid.
+        // Aici optăm pentru completarea cu zerouri dacă sunt mai puține de 4.
+        while (vecCount < 4)
+        {
+            vector[vecCount++] = 0;
+        }
     }
 
     // Curățăm ring buffer-ul pentru a evita recitirea datelor vechi.
     RingBuffer_Clear();
 
-    // Apelăm funcția de procesare a datelor cu primele 4 token-uri:
-    //   values[0] -> tip, values[1] -> data1, values[2] -> data2, values[3] -> data3.
-    process_rasp_data(values[0], values[1], values[2], values[3]);
+    // Apelăm funcția de procesare a datelor:
+    //   val1, val2, val3 sunt primele 3 valori, iar vectorul de 4 elemente este transmis ca al 4-lea parametru.
+    process_rasp_data(val1, val2, val3, vector);
 }
 
 

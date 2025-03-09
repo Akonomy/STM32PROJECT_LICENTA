@@ -50,9 +50,11 @@
 
 /* Private variables ---------------------------------------------------------*/
         // Exemplu de variabilă pentru USART
-uint8_t i2c_slave_address = 0x08;    // Adresa I2C a sclavului
+
 
 void test_send_packets(void);
+
+
 
 
 
@@ -67,8 +69,9 @@ int main(void)
 
     //DON"T RUN WITH MODE = 1 IN PRODUCTION , this is for debug only, mode should be set by raspberry py
 
-    mode=1;
+    mode=0;
     uint16_t values[4]={2000,2000,2000,2000};
+
 
 
 
@@ -123,7 +126,7 @@ int main(void)
 
 
 
-
+    	headTo = 4;
         /* Dacă s-a detectat o intersecție (CROSS >= 1) se efectuează o virare */
         if (CROSS >= 1)
         {
@@ -133,6 +136,21 @@ int main(void)
             SetSensorRight(0);
             SetSensorLeft(0);
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         /* Citirea senzorilor și procesarea datelor */
 

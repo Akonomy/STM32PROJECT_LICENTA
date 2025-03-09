@@ -38,7 +38,7 @@ uint8_t mode =0;
 
 
 
-
+uint8_t i2c_slave_address = 0x08;    // Adresa I2C a sclavului
 
 
 

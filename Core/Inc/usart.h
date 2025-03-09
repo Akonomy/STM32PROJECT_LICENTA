@@ -19,14 +19,12 @@ extern uint16_t bytes_received;
 // Function prototypes
 void USART_Send_Byte(uint8_t data);
 void USART_Send_Array(uint8_t *data, uint16_t length);
-bool USART_Receive_Two_Values(uint8_t *value1, uint8_t *value2);
 
 void USART_Check_And_Confirm(void);
 
 void USART_Send_String(const char *str);
 
 
-int USART_Receive_Values(uint16_t *values, uint8_t max_values);
 
 
 
