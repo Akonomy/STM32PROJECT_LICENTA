@@ -100,23 +100,10 @@ void go(uint8_t max_x, uint8_t direction_x) {
 
 	for (uint8_t x = 0; x < max_x; x++) {
 
-		SendSingleValue(0x08, 128, direction_x);
+
 		DelayWithTimer(100);
-		SendSingleValue(0x08, 128, 0);
+
 
 	}
-
-}
-
-void go_servo(uint8_t servo, uint8_t position) {
-	/*
-	 case 300: return "SERVO BAZA";
-	 case 301: return "SERVO BRAT";
-	 case 302: return "SERVO CLAW";
-
-	 */
-
-	SendSingleValue(0x08, servo, position);
-	DelayWithTimer(10);
 
 }

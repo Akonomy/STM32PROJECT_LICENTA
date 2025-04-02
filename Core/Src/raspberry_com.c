@@ -36,18 +36,21 @@
 void control_car(uint8_t direction, uint8_t tick, uint16_t speed[4]) {
 
 	   SetSensorRight(1);
-	    SetSensorLeft(1);
+
     // Verificare parametri
 
 	if (tick == 0 || direction==0){
+		SetSensorLeft(1);
 		 I2C_Send_Packet(i2c_slave_address,0x0000 ,0, 4);
 		 return;
 	}
     if (direction > 20) {
         // Eroare: direcția este în afara intervalului permis (0-12)
+    	SetSensorLeft(1);
         return;
     }
     if (tick>30) {
+    	SetSensorLeft(1);
         // Eroare: tick-ul este în afara intervalului permis (1-10)
         return;
     }
@@ -55,18 +58,38 @@ void control_car(uint8_t direction, uint8_t tick, uint16_t speed[4]) {
 
 
 
-    uint8_t delay_movement =105;
+
 
     if (tick==1){
-    	delay_movement=150;
+
+
+    	for (uint8_t x = 0; x < tick; x++) {
+    			SetSensorRight(0);
+
+    			 I2C_Send_Packet(i2c_slave_address, directii_implicite[direction] , speed, 4);
+    			 DelayWithTimer(155);
+    			 SetSensorRight(1);
     }
-	for (uint8_t x = 0; x < tick; x++) {
+    }
 
-		 I2C_Send_Packet(i2c_slave_address, directii_implicite[direction] , speed, 4);
-		 DelayWithTimer(delay_movement);
-		 I2C_Send_Packet(i2c_slave_address, 0x0000,0, 4);
 
-	}
+    else {
+
+    		for (uint8_t x = 0; x < tick; x++) {
+    				SetSensorRight(0);
+
+    				 I2C_Send_Packet(i2c_slave_address, directii_implicite[direction] , speed, 4);
+    				 DelayWithTimer(100);
+    				 SetSensorRight(1);
+
+
+    			}
+
+    	}
+
+
+
+	 I2C_Send_Packet(i2c_slave_address, 0x0000,0, 4);
 
 
     SetSensorRight(0);
@@ -95,7 +118,7 @@ void control_servo(uint8_t servo_id, uint8_t angle) {
     //DelayWithTimer(10);
 
 
-    SetSensorRight(1);
+
     SetSensorLeft(1);
 
 }
@@ -126,40 +149,6 @@ void request_data(uint8_t sensor_type) {
 
 
 
-    if (sensor_type==2){
-
-    	for( uint8_t x=0; x<7; x++ ) {
-    	        // Stare 1: Aprinde LED-ul roșu, stinge LED-ul albastru
-    	        SetSensorRight(1);  // LED roșu aprins
-    	        SetSensorLeft(0);   // LED albastru stins
-    	        DelayWithTimer(200);  // așteaptă 200 ms
-
-
-
-
-    	        // Stare 2: Ambele LED-uri stinse (pauză scurtă)
-    	        SetSensorRight(0);
-    	        SetSensorLeft(0);
-    	        DelayWithTimer(200);  // așteaptă 200 ms
-
-    	        // Stare 3: Stinge LED-ul roșu, aprinde LED-ul albastru
-    	        SetSensorRight(0);
-    	        SetSensorLeft(1);   // LED albastru aprins
-    	        DelayWithTimer(200);  // așteaptă 200 ms
-
-
-
-
-
-    	        // Stare 4: Ambele LED-uri stinse (pauză scurtă)
-    	        SetSensorRight(0);
-    	        SetSensorLeft(0);
-    	        DelayWithTimer(200);  // așteaptă 200 ms
-    }
-    }
-    SetSensorRight(0);
-    SetSensorLeft(0);
-
 
 }
 
@@ -185,19 +174,6 @@ void save_next_cross_direction(uint8_t direction) {
     }
 
     headTo=direction;
-    SetSensorRight(1);
-    SetSensorLeft(1);
-    DelayWithTimer(50);
-    SetSensorRight(0);
-    SetSensorLeft(0);
-    DelayWithTimer(50);
-    SetSensorRight(1);
-    SetSensorLeft(1);
-    DelayWithTimer(50);
-    SetSensorRight(0);
-    SetSensorLeft(0);
-
-
 
 
 }
@@ -206,12 +182,49 @@ void save_next_cross_direction(uint8_t direction) {
 
 
 
+void decode_and_save_directions(uint8_t data1, uint8_t data2, uint8_t vector[4]) {
+    // Verificare: lungimea trebuie să fie în intervalul 0..MAX_DIRECTIONS.
+    if (data1 > MAX_DIRECTIONS) {
+        // Date invalide (lungime prea mare), deci ignorăm complet datele.
+        return;
+    }
+
+    uint8_t unxored[4];
+    uint32_t packed = 0;
+    uint8_t i;
+
+    // Decriptează fiecare octet prin XOR cu cheia data2.
+    for (i = 0; i < 4; i++) {
+        unxored[i] = vector[i] ^ data2;
+    }
+
+    // Reasamblăm cei 32 de biți din cei 4 octeți (presupunem little-endian)
+    packed = ((uint32_t)unxored[0]) |
+             (((uint32_t)unxored[1]) << 8) |
+             (((uint32_t)unxored[2]) << 16) |
+             (((uint32_t)unxored[3]) << 24);
+
+    // Extragem fiecare direcție (2 biți per element) și convertim din intervalul 0-3 în 1-4.
+    for (i = 0; i < data1; i++) {
+        global_directions[i] = ((packed >> (2 * i)) & 0x03) + 1;
+    }
+
+    // Setăm restul pozițiilor din vectorul global la 0.
+    for (; i < MAX_DIRECTIONS; i++) {
+        global_directions[i] = 0;
+    }
+}
 
 
 
 
 
+void set_mode(uint8_t data1){
 
+	mode=data1;
+
+
+}
 
 
 
@@ -258,6 +271,12 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t vecto
             // Tipul 4: Save Next Cross Direction
             save_next_cross_direction(data1);
             break;
+
+        case 5:
+        	set_mode(data1);
+
+        case 6:
+        	decode_and_save_directions(data1,data2,vector);
         default:
             // Tip de comandă necunoscut - nu se realizează nicio acțiune.
             break;
@@ -269,173 +288,107 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t vecto
 
 //----------------------------------------------------------------------
 // This function extracts a newline-terminated message from the ring buffer,
-// tokenizes it (using space as a delimiter), and passes the first four numbers
+// tokenizes it (using space as a delimiter), and passes the first four numbers4
 // to process_rasp_data. Up to 5 tokens are read from the message, though only
 // the first 4 are used for processing.
 //----------------------------------------------------------------------
 
 void parse_and_process_data(void)
 {
-    currentTime = get_system_time_ms();
+    // Un pachet complet are lungimea: 1 (start) + 3 (cmd_type, data1, data2) + 1 (lungime vector) + vector_length + 1 (end)
+    // Lungimea minimă este 7 (dacă vector_length == 1) și maximă 10 (dacă vector_length == 4).
 
-    // Verifică intervalul minim între procesări pentru a evita "spam"-ul de mesaje.
-    if ((currentTime - lastProcessTime) < MIN_PROCESS_INTERVAL)
+    // Procesăm cât timp avem cel puțin 7 octeți în buffer
+    while (RingBuffer_Available() >= 7)
     {
-        RingBuffer_Clear();
-        SetSensorRight(1);
-        DelayWithTimer(250);
-        SetSensorRight(0);
-        lastProcessTime = currentTime;
-        return;
-    }
-    // Actualizează timpul ultimei procesări
-
-    char message[50] = {0};  // Buffer local pentru mesaj
-    int msgOffset = 0;
-
-    // Caută markerul de început '<' în ring buffer.
-    while (RingBuffer_Available() > 0 && msgOffset < (sizeof(message) - 1))
-    {
-        uint8_t ch = rxBuffer[rxReadIndex];
-        rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;  // Asigură circularitatea bufferului
-        if (ch == '<')
+        // Căutăm markerul de început (0xAA)
+        if (rxBuffer[rxReadIndex] != 0xAA)
         {
-            message[msgOffset++] = ch;  // Salvează markerul de început
-            break;
+            rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;
+            continue;
         }
-    }
 
-    // Dacă nu s-a găsit markerul de început, mesajul este invalid.
-    if (msgOffset == 0)
-    {
-        RingBuffer_Clear();
-        return;
-    }
+        // Avem markerul de început; dar trebuie să avem cel puțin 5 octeți pentru a citi până la lungimea vectorului
+        if (RingBuffer_Available() < 5){
 
-    // Citește caractere până se găsește markerul de sfârșit '>' sau până se umple bufferul.
-    bool endMarkerFound = false;
-    while (RingBuffer_Available() > 0 && msgOffset < (sizeof(message) - 1))
-    {
-        uint8_t ch = rxBuffer[rxReadIndex];
-        rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;
-        message[msgOffset++] = ch;
-        if (ch == '>')
+            break;  // Nu avem suficiente date pentru a determina lungimea vectorului
+        }
+        // Folosim o zonă temporară pentru a citi primele 5 octeți (fără a-i scoate definitiv din buffer)
+        uint8_t temp_packet[5];
+        uint16_t temp_index = rxReadIndex;
+        for (int i = 0; i < 5; i++)
         {
-            endMarkerFound = true;
-            break;
+            temp_packet[i] = rxBuffer[temp_index];
+            temp_index = (temp_index + 1) % RX_BUFFER_SIZE;
         }
-    }
-    message[msgOffset] = '\0';  // Terminare cu null
+        // temp_packet[0] = 0xAA (start)
+        // temp_packet[1] = cmd_type, [2] = data1, [3] = data2, [4] = vector_length
+        uint8_t vector_length = temp_packet[4];
 
-    // Dacă nu s-a găsit markerul de sfârșit, mesajul este incomplet.
-    if (!endMarkerFound)
-    {
-        RingBuffer_Clear();
-        return;
-    }
-
-    // Verifică dacă mesajul începe cu '<' și se termină cu '>'
-    if (message[0] != '<' || message[msgOffset - 1] != '>')
-    {
-        RingBuffer_Clear();
-        return;
-    }
-
-    // Elimină markerul de sfârșit '>' și setează un pointer la interiorul mesajului.
-    message[msgOffset - 1] = '\0';
-    char *innerMessage = message + 1;  // Sărim peste caracterul '<'
-
-    // Se așteaptă formatul: val1 val2 val3 [vector]
-    // Tokenizează primele 3 valori folosind spațiul ca delimitator.
-    char *token = strtok(innerMessage, " ");
-    if (token == NULL)
-    {
-        RingBuffer_Clear();
-        return;
-    }
-    uint8_t val1 = (uint8_t)atoi(token);
-
-    token = strtok(NULL, " ");
-    if (token == NULL)
-    {
-        RingBuffer_Clear();
-        return;
-    }
-    uint8_t val2 = (uint8_t)atoi(token);
-
-    token = strtok(NULL, " ");
-    if (token == NULL)
-    {
-        RingBuffer_Clear();
-        return;
-    }
-    uint8_t val3 = (uint8_t)atoi(token);
-
-    // Acum se caută secvența vectorului, care trebuie să înceapă cu '['.
-    token = strtok(NULL, ""); // Rămâne restul șirului, inclusiv spațiile, pentru a putea găsi '['
-    if (token == NULL)
-    {
-        RingBuffer_Clear();
-        return;
-    }
-
-    // Caută începutul secvenței de vector
-    char *vecStart = strchr(token, '[');
-    if (vecStart == NULL)
-    {
-        RingBuffer_Clear();
-        return;
-    }
-    vecStart++;  // Sărim peste '['
-
-    // Caută sfârșitul secvenței vector (caracterul ']')
-    char *vecEnd = strchr(vecStart, ']');
-    if (vecEnd == NULL)
-    {
-        RingBuffer_Clear();
-        return;
-    }
-    *vecEnd = '\0';  // Înlocuiește ']' cu '\0' pentru a avea un subșir curat
-
-    // Acum, vecString conține conținutul din interiorul parantezelor, de ex: "255 255 255 255" sau "255"
-    // Folosim strtok pentru a obține token-urile din vector, folosind ca delimitatori spațiile.
-    uint8_t vector[4] = {0};
-    int vecCount = 0;
-    token = strtok(vecStart, " ");
-    while (token != NULL && vecCount < 4)
-    {
-        vector[vecCount++] = (uint8_t)atoi(token);
-        token = strtok(NULL, " ");
-    }
-
-    // Dacă vectorul conține doar un element, replică-l pe toate cele 4 poziții.
-    if (vecCount == 1)
-    {
-        vector[1] = vector[0];
-        vector[2] = vector[0];
-        vector[3] = vector[0];
-    }
-    else if (vecCount != 4)
-    {
-        // Dacă numărul de elemente nu e 1 sau 4, poți alege să:
-        // - Completezi cu zerouri,
-        // - Folosești doar primele 4, sau
-        // - Marci mesajul ca invalid.
-        // Aici optăm pentru completarea cu zerouri dacă sunt mai puține de 4.
-        while (vecCount < 4)
+        // Verificăm dacă vector_length este valid (doar 1 sau 4 sunt acceptate)
+        if (vector_length != 1 && vector_length != 4)
         {
-            vector[vecCount++] = 0;
+            // Nu este un pachet valid, deci eliminăm markerul de început și continuăm
+            rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;
+            RingBuffer_Clear();
+            continue;
         }
+
+        // Lungimea totală a pachetului
+        uint8_t packet_length = 6 + vector_length; // 1+3+1+vector_length+1
+
+        // Verificăm dacă avem întregul pachet în buffer
+        if (RingBuffer_Available() < packet_length)
+            break;  // Așteptăm mai multe date
+
+        // Citim întregul pachet
+        uint8_t packet[10];  // maxim 10 octeți
+        for (int i = 0; i < packet_length; i++)
+        {
+            packet[i] = rxBuffer[rxReadIndex];
+            rxReadIndex = (rxReadIndex + 1) % RX_BUFFER_SIZE;
+        }
+
+        // Verificăm markerul de sfârșit (ultimul octet)
+        if (packet[packet_length - 1] != 0xBB)
+        {
+            // Pachet invalid: markerul de sfârșit nu este corect, deci ignorăm pachetul
+        	 RingBuffer_Clear();
+            continue;
+        }
+
+        // Extragem câmpurile din pachet:
+        // packet[0] este 0xAA (start)
+        // packet[1] = cmd_type, [2] = data1, [3] = data2, [4] = vector_length,
+        // vectorul începe la packet[5] și markerul de sfârșit este la packet[packet_length - 1]
+        uint8_t cmd_type = packet[1];
+        uint8_t data1 = packet[2];
+        uint8_t data2 = packet[3];
+
+        // Pregătim un vector de 4 elemente.
+        // Dacă vector_length este 4, le preluăm direct.
+        // Dacă este 1, completăm toate cele 4 elemente cu aceeași valoare ca primul element primit.
+        uint8_t vector_out[4];
+        if (vector_length == 4)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                vector_out[i] = packet[5 + i];
+            }
+        }
+        else // vector_length == 1
+        {
+            uint8_t val = packet[5];
+            for (int i = 0; i < 4; i++)
+            {
+                vector_out[i] = val;
+            }
+        }
+        RingBuffer_Clear();
+
+        // Apelează funcția care procesează datele primite
+        process_rasp_data(cmd_type, data1, data2, vector_out);
     }
-
-    // Curățăm ring buffer-ul pentru a evita recitirea datelor vechi.
-    RingBuffer_Clear();
-
-    // Apelăm funcția de procesare a datelor:
-    //   val1, val2, val3 sunt primele 3 valori, iar vectorul de 4 elemente este transmis ca al 4-lea parametru.
-    process_rasp_data(val1, val2, val3, vector);
 }
-
-
 
 

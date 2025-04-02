@@ -10,16 +10,16 @@
 
 #include <stdint.h>
 
-extern uint8_t sensor_data[8];   // Array pentru citirile senzorilor
-extern uint8_t CROSS;            // Contor pentru intersecții
-extern uint8_t lost_car;
-extern uint8_t headTo;           // Direcția pentru viraj (default back)
-extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
+
+
+
+#define MAX_DIRECTIONS 16
+
 
 #define TIMEOUT_DURATION 100
 #define RX_BUFFER_SIZE 256
 
-#define MIN_PROCESS_INTERVAL 256  // 90 ms
+#define MIN_PROCESS_INTERVAL 1000  // 90 ms
 
 
 #define EMERGENCY_CODE 56
@@ -61,6 +61,24 @@ extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
 
 
 //---------------------------< END DIRECTII >-----------------------------------------//
+
+
+extern uint8_t sensor_data[8];   // Array pentru citirile senzorilor
+extern uint8_t CROSS;            // Contor pentru intersecții
+extern uint8_t lost_car;
+
+extern uint8_t headTo;           // Direcția pentru viraj (default back)
+
+// Vector global de 16 poziții, inițializat cu 0.
+extern uint8_t global_directions[MAX_DIRECTIONS];  //vectorul de directii
+extern uint8_t rasp_control;     // Flag pentru controlul de la Raspberry
+
+
+
+
+
+
+
 
 
 extern uint8_t mode;

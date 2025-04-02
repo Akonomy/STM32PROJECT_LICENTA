@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 
 
@@ -43,48 +42,7 @@ void toBinaryString(uint8_t value, char *binary_string) {
 	binary_string[8] = '\0'; // Null-terminate the string
 }
 
-void ProcessReceivedData(uint8_t *buffer, uint16_t length) {
-	for (uint16_t i = 0; i < length; i++) {
-		// Example: Simulate initial sensor state
-		SetSensorRight(1);
-		SetSensorLeft(1);
-		DelayWithTimer(500);
 
-		SetSensorRight(0);
-		SetSensorLeft(0);
-		DelayWithTimer(500);
-
-		SetSensorRight(1);
-		SetSensorLeft(1);
-		DelayWithTimer(500);
-
-		// Process each byte in the buffer
-		if (buffer[i] == 1) {
-			SetSensorRight(0);
-			SetSensorLeft(1);
-			DelayWithTimer(500);
-			DelayWithTimer(500);
-		} else if (buffer[i] == 0) {
-			SetSensorRight(1);
-			SetSensorLeft(0);
-			DelayWithTimer(500);
-			DelayWithTimer(500);
-		}
-
-		// Reset sensors to default state
-		SetSensorRight(0);
-		SetSensorLeft(0);
-	}
-}
-
-bool isFirstValueEqual(uint16_t *values, uint8_t count, uint16_t expected)
-{
-    if (count > 0)
-    {
-        return (values[0] == expected);
-    }
-    return false;
-}
 
 
 

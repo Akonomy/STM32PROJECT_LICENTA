@@ -18,6 +18,11 @@ uint8_t CROSS = 0;
 
 
 uint8_t headTo = 4;      // Default: back
+
+uint8_t global_directions[MAX_DIRECTIONS] = {0};
+
+
+
 uint8_t rasp_control = 0;
 
 

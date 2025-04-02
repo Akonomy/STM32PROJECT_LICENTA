@@ -11,6 +11,15 @@
 #include <stdint.h>
 #include "usart.h"
 
+
+
+
+#define MESSAGE_SIZE 9       // 9 octeți: 1 start, 3 valori, 4 vector, 1 end
+#define START_MARKER 0x02
+#define END_MARKER   0x03
+
+
+
 /**
  * @brief Controlează mașina.
  *
@@ -62,6 +71,11 @@ void save_next_cross_direction(uint8_t direction);
 
 
 
+void decode_and_save_directions(uint8_t data1, uint8_t data2, uint8_t vector[4]);
+
+
+
+void set_mode(uint8_t data1);
 
 
 /**

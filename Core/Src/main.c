@@ -33,8 +33,9 @@
 #include "raspberry_com.h" //process mesaje de la raspberry pi
 
 
-#include <string.h>
+//#include <string.h>
 #include <stdint.h>
+
 
 
 
@@ -117,6 +118,7 @@ int main(void)
     	if (newDataFlag){
     		parse_and_process_data();
     	}
+
 
 
 
@@ -221,7 +223,7 @@ int main(void)
 
 
 
-        DelayWithTimer(10); // Întârziere înainte de următorul ciclu
+        DelayWithTimer(5); // Întârziere înainte de următorul ciclu
     }
 }
 

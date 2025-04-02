@@ -20,8 +20,6 @@ extern uint16_t bytes_received;
 void USART_Send_Byte(uint8_t data);
 void USART_Send_Array(uint8_t *data, uint16_t length);
 
-void USART_Check_And_Confirm(void);
-
 void USART_Send_String(const char *str);
 
 

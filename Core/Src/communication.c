@@ -49,17 +49,6 @@ void I2C_Send_Buffer(uint8_t slave_address, uint8_t *data, uint16_t size) {
 
 
 
-void SendSingleValue(uint8_t slave_address, uint8_t index, uint16_t value) {
-	uint8_t buffer[3];
-	buffer[0] = index;               // Index
-	buffer[1] = (value >> 8) & 0xFF; // High byte of value
-	buffer[2] = value & 0xFF;        // Low byte of value
-
-	I2C_Send_Buffer(slave_address, buffer, sizeof(buffer)); // Send single value
-}
-
-
-
 
 // Funcția I2C_Send_Buffer este deja definită și trimite un buffer de date de mărimea specificată către un slave
 
