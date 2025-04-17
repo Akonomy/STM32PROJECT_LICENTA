@@ -62,7 +62,7 @@
 
 //---------------------------< END DIRECTII >-----------------------------------------//
 
-
+extern uint16_t sensor_data16[3];
 extern uint8_t sensor_data[8];   // Array pentru citirile senzorilor
 extern uint8_t CROSS;            // Contor pentru intersecții
 extern uint8_t lost_car;

@@ -12,7 +12,7 @@
 
 
 
-
+uint16_t sensor_data16[3];
 uint8_t sensor_data[8] = {0};
 uint8_t CROSS = 0;
 

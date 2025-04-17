@@ -103,25 +103,27 @@ void control_car(uint8_t direction, uint8_t tick, uint16_t speed[4]) {
  *  - servo_id: reprezintă ID-ul servo-ului (180-190)
  *  - angle: reprezintă unghiul la care se setează servo-ul (0-180)
  */
-void control_servo(uint8_t servo_id, uint8_t angle) {
-    // Verificare parametri
-    if (servo_id < 180 || servo_id > 190) {
-        // Eroare: ID-ul servo-ului este în afara intervalului permis (180-190)
+void control_servo(uint8_t servo_id, uint8_t state) {
+    uint16_t mask = 0;
+
+    // Selectăm masca pe baza ID-ului servo-ului
+    if (servo_id == 181) {
+        mask = 0x0200; // Servo 9
+    } else if (servo_id == 182) {
+        mask = 0x0400; // Servo 10
+    } else {
+        // Servo ID necunoscut – ignoră comanda
         return;
     }
-    if (angle > 180) {
-        // Eroare: unghiul este în afara intervalului permis (0-180)
-        return;
-    }
 
-    //SendSingleValue(0x08, servo_id, angle);  /*UNCOMMENT WHEN U IMPLEMENT SERVO*/
-    //DelayWithTimer(10);
+    // Trimitere pachet cu o singură valoare (state = comanda 0,1,2,3)
+    uint16_t value = (uint16_t)state;
+    I2C_Send_Packet(i2c_slave_address, mask, &value, 1);
 
-
-
-    SetSensorLeft(1);
-
+    // Feedback simbolic, pentru moralul roboților
+    SetSensorLeft(1); // Maybe blink this in Morse code to spell "why?"
 }
+
 
 /**
  * @brief Solicită date.
@@ -246,6 +248,7 @@ void set_mode(uint8_t data1){
  *   - TYPE 4: save_next_cross_direction(data1)
  */
 void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t vector[4]) {
+	 SetSensorLeft(1);
     switch(type) {
         case 1:
         {
@@ -262,21 +265,40 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t vecto
         case 2:
             // Tipul 2: Control Servo
             control_servo(data1, data2);
+            SetSensorLeft(0); //future , if PASS
             break;
         case 3:
             // Tipul 3: Request Data
+
             request_data(data1);
             break;
         case 4:
             // Tipul 4: Save Next Cross Direction
+        	SetSensorLeft(0);
             save_next_cross_direction(data1);
             break;
 
         case 5:
+        	SetSensorLeft(0);
         	set_mode(data1);
 
         case 6:
+        	SetSensorLeft(0);
         	decode_and_save_directions(data1,data2,vector);
+
+        case 7:  //signal that i received data via usart
+        	SetSensorLeft(0);
+        	SetSensorRight(0);
+        	DelayWithTimer(500);
+           	SetSensorLeft(1);
+            SetSensorRight(1);
+            DelayWithTimer(500);
+           	SetSensorLeft(0);
+            SetSensorRight(1);
+            DelayWithTimer(500);
+            SetSensorRight(0);
+
+
         default:
             // Tip de comandă necunoscut - nu se realizează nicio acțiune.
             break;

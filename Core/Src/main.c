@@ -107,6 +107,14 @@ int main(void)
 
 
 
+    SetSensorRight(1);
+    SetSensorLeft(1);
+
+
+
+
+
+
     while (1)
     {
 
@@ -118,13 +126,6 @@ int main(void)
     	if (newDataFlag){
     		parse_and_process_data();
     	}
-
-
-
-
-
-
-
 
 
 

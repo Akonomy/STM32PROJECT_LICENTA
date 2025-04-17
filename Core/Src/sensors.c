@@ -28,32 +28,34 @@ bool SetControlPins(uint8_t code) {
 }
 
 
-
 void read_sensors() {
-	for (uint8_t code = 0; code < 8; code++) {
-		if (SetControlPins(code)) {
-			// Start ADC conversion
-			ADC1->CR |= ADC_CR_ADSTART;
+    uint8_t sensor16_index = 0;  // index pentru sensor_data16[]
 
-			// Wait for conversion to complete
-			while (!(ADC1->ISR & ADC_ISR_EOC))
-				;
+    for (uint8_t code = 0; code < 8; code++) {
+        if (SetControlPins(code)) {
+            // Start ADC conversion
+            ADC1->CR |= ADC_CR_ADSTART;
 
-			// Read raw ADC value (12-bit)
-			//uint16_t adcValue = ADC1->DR;
+            // Wait for conversion to complete
+            while (!(ADC1->ISR & ADC_ISR_EOC))
+                ;
 
-			// Store the raw ADC value in the sensor_data array
+            // Citește valoarea raw (12-bit) de la ADC
+            uint16_t adc_raw = ADC1->DR;
 
-			//convertadc to bin
+            // Pentru indicii 0,1,3,4 și 6 folosim un prag pentru a obține valoare binară
+            if (code == 0 || code == 1 || code == 3 || code == 4 || code == 6) {
+                sensor_data[code] = (adc_raw > 1000) ? 1 : 0;
+            }
+            // Pentru indicii 2,5 și 7 salvăm valoarea raw în sensor_data16[]
+            else if (code == 2 || code == 5 || code == 7) {
+                sensor_data16[sensor16_index++] = adc_raw;
+            }
 
-			uint8_t adcValue = (ADC1->DR > 1000) ? 1 : 0; // Threshold ADC value to 1 or 0
-
-			sensor_data[code] = adcValue;
-
-			// Small delay for stability
-			DelayWithTimer(2);
-		}
-	}
+            // Delay mic pentru stabilitate
+            DelayWithTimer(2);
+        }
+    }
 }
 
 
