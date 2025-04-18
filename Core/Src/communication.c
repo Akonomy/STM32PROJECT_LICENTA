@@ -92,5 +92,76 @@ void I2C_Send_Packet(uint8_t slave_address, uint16_t mask, uint16_t *values, uin
 }
 
 
+uint8_t I2C_Read_Status(uint8_t slave_address) {
+    uint8_t receivedByte = 0;
+
+    // Asigură-te că I2C nu e ocupat
+    while (I2C1->ISR & I2C_ISR_BUSY);
+
+    // Setăm adresă de slave, 1 byte de citit, citire activă (RD_WRN), START + AUTOEND
+    I2C1->CR2 = (slave_address << 1) |
+                (1 << 16) |              // NBYTES = 1
+                I2C_CR2_RD_WRN |         // Read mode
+                I2C_CR2_START |          // Generate START
+                I2C_CR2_AUTOEND;         // Auto STOP
+
+    // Așteaptă până când există date în RXDR
+    while (!(I2C1->ISR & I2C_ISR_RXNE));
+
+    // Citește byte-ul
+    receivedByte = I2C1->RXDR;
+
+    // Așteaptă să termine transferul complet (STOPF)
+    while (!(I2C1->ISR & I2C_ISR_STOPF));
+
+    // Șterge flag-ul de STOP
+    I2C1->ICR = I2C_ICR_STOPCF;
+
+    return receivedByte;
+}
+
+uint8_t I2C_Read_WithTimeout(uint8_t slave_address, uint16_t timeout_ms) {
+    uint8_t receivedByte = 207; // Valoare default (eroare timeout)
+
+    // Pornește timerul de timeout
+    Timeout(timeout_ms);
+
+    // Așteaptă I2C să fie liber
+    while ((I2C1->ISR & I2C_ISR_BUSY)) {
+        if (checkTimeout()) return 207;
+    }
+
+    // Configurăm transferul pentru 1 byte, read mode
+    I2C1->CR2 = (slave_address << 1) |
+                (1 << 16) |            // NBYTES = 1
+                I2C_CR2_RD_WRN |       // Read
+                I2C_CR2_START |        // START
+                I2C_CR2_AUTOEND;       // Auto STOP
+
+    // Așteaptă date
+    while (!(I2C1->ISR & I2C_ISR_RXNE)) {
+        if (checkTimeout()) return 207;
+    }
+
+    // Citește byte-ul
+    receivedByte = I2C1->RXDR;
+
+    // Așteaptă STOP
+    while (!(I2C1->ISR & I2C_ISR_STOPF)) {
+        if (checkTimeout()) return 207;
+    }
+
+    // Clear STOP flag
+    I2C1->ICR = I2C_ICR_STOPCF;
+
+    // Închide timerul
+    endTimeout();
+
+    return receivedByte;
+}
+
+
+
+
 
 

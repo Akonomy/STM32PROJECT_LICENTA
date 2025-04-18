@@ -107,8 +107,7 @@ int main(void)
 
 
 
-    SetSensorRight(1);
-    SetSensorLeft(1);
+
 
 
 
@@ -147,8 +146,54 @@ int main(void)
 
 
 
+        if (mode==7){
+        	SetSensorLeft(1);
+        	SetSensorRight(1);
+
+        	 control_servo(182,1);
+
+        	 DelayWithTimer(500);
+        	 DelayWithTimer(500);
+        	 DelayWithTimer(500);
+        	 DelayWithTimer(500);
+        	 DelayWithTimer(500);
+
+         	SetSensorLeft(0);
 
 
+        	 control_servo(182,0);
+
+          	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+
+        	 control_servo(181,0);
+
+        	 SetSensorRight(0);
+
+          	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+
+        	 control_servo(181,1);
+
+        	 SetSensorRight(1);
+
+
+          	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+            	 DelayWithTimer(500);
+
+            	 SetSensorRight(0);
+
+
+        }
 
 
 

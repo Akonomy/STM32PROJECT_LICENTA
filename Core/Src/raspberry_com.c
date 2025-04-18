@@ -112,7 +112,8 @@ void control_servo(uint8_t servo_id, uint8_t state) {
     } else if (servo_id == 182) {
         mask = 0x0400; // Servo 10
     } else {
-        // Servo ID necunoscut – ignoră comanda
+        // Servo ID necunoscut – ignorăm comanda
+        USART_Send_Byte(104); // 104 = servo nu a fost găsit
         return;
     }
 
@@ -120,9 +121,37 @@ void control_servo(uint8_t servo_id, uint8_t state) {
     uint16_t value = (uint16_t)state;
     I2C_Send_Packet(i2c_slave_address, mask, &value, 1);
 
-    // Feedback simbolic, pentru moralul roboților
-    SetSensorLeft(1); // Maybe blink this in Morse code to spell "why?"
+    // Așteptăm 3 secunde (6 x 500ms)
+    for (int i = 0; i < 6; i++) {
+        DelayWithTimer(500);
+    }
+
+    // Citim răspunsul
+    uint8_t response = I2C_Read_WithTimeout(i2c_slave_address, 5000);
+
+    // Dacă răspunsul e 101 (servo încă în mișcare), mai așteptăm 2 sec și recitim o dată
+    if (response == 101) {
+        DelayWithTimer(500);
+        DelayWithTimer(500);
+        response = I2C_Read_WithTimeout(i2c_slave_address, 5000);
+    }
+
+    // Trimitem codul final spre Raspberry Pi
+    USART_Send_Byte(response);
+
+    // Aprindem LED-uri în funcție de rezultat
+    if (response == 1) {
+        SetSensorLeft(1);  // Succes
+        SetSensorRight(0);
+    } else if (response == 207) {
+        SetSensorLeft(0);
+        SetSensorRight(1); // Timeout
+    } else {
+        SetSensorLeft(0);  // Fail sau alt cod
+        SetSensorRight(0);
+    }
 }
+
 
 
 /**
