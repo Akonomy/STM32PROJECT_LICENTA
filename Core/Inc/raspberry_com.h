@@ -78,6 +78,8 @@ void decode_and_save_directions(uint8_t data1, uint8_t data2, uint8_t vector[4])
 void set_mode(uint8_t data1);
 
 
+
+void adjust_box();
 /**
  * @brief Procesează datele primite.
  *

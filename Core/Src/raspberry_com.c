@@ -122,14 +122,14 @@ void control_servo(uint8_t servo_id, uint8_t state) {
     I2C_Send_Packet(i2c_slave_address, mask, &value, 1);
 
     // Așteptăm 3 secunde (6 x 500ms)
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 3; i++) {
         DelayWithTimer(500);
     }
 
     // Citim răspunsul
     uint8_t response = I2C_Read_WithTimeout(i2c_slave_address, 5000);
 
-    // Dacă răspunsul e 101 (servo încă în mișcare), mai așteptăm 2 sec și recitim o dată
+    // Dacă răspunsul e 101 (servo încă în mișcare), mai așteptăm 1 sec și recitim o dată
     if (response == 101) {
         DelayWithTimer(500);
         DelayWithTimer(500);
@@ -257,7 +257,11 @@ void set_mode(uint8_t data1){
 
 }
 
+void adjust_box(){
+	uint16_t value={1};
+	 I2C_Send_Packet(i2c_slave_address, 0x0800, &value, 1);
 
+}
 
 
 
@@ -315,6 +319,7 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t vecto
         	SetSensorLeft(0);
         	decode_and_save_directions(data1,data2,vector);
 
+
         case 7:  //signal that i received data via usart
         	SetSensorLeft(0);
         	SetSensorRight(0);
@@ -326,6 +331,10 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t vecto
             SetSensorRight(1);
             DelayWithTimer(500);
             SetSensorRight(0);
+
+        case 8:
+
+        	adjust_box();
 
 
         default:
