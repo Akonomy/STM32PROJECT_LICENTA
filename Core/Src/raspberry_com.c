@@ -107,9 +107,9 @@ void control_servo(uint8_t servo_id, uint8_t state) {
     uint16_t mask = 0;
 
     // Selectăm masca pe baza ID-ului servo-ului
-    if (servo_id == 181) {
+    if (servo_id ==9 || servo_id == 181) {
         mask = 0x0200; // Servo 9
-    } else if (servo_id == 182) {
+    } else if (servo_id == 10 || servo_id == 182) {
         mask = 0x0400; // Servo 10
     } else {
         // Servo ID necunoscut – ignorăm comanda

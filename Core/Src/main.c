@@ -112,7 +112,7 @@ int main(void)
 
 
 
-
+    makeTurn(4) ;
 
     while (1)
     {

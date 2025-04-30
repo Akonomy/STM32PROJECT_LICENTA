@@ -11,7 +11,9 @@
 #include <stdint.h>
 
 void makeTurn(uint8_t direction_x);
-void go(uint8_t max_x, uint8_t direction_x);
 
+void move_car(uint8_t direction, uint8_t tick, uint16_t speed[4]);
+
+void follow_next_direction();
 
 #endif /* INC_MOTION_H_ */
