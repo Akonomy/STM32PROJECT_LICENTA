@@ -112,7 +112,6 @@ int main(void)
 
 
 
-    makeTurn(4) ;
 
     while (1)
     {
@@ -128,12 +127,12 @@ int main(void)
 
 
 
-    	headTo = 4;
+
         /* Dacă s-a detectat o intersecție (CROSS >= 1) se efectuează o virare */
-        if (CROSS >= 1)
+        if (CROSS >= 1 && mode != 0)
         {
             //makeTurn(headTo);
-            headTo = 4;      // Resetează la direcția default (back)
+        	follow_next_direction();
             CROSS = 0;
             SetSensorRight(0);
             SetSensorLeft(0);
@@ -143,57 +142,16 @@ int main(void)
 
 
 
-
-
-
         if (mode==7){
-        	SetSensorLeft(1);
-        	SetSensorRight(1);
-
-        	 control_servo(182,1);
-
-        	 DelayWithTimer(500);
-        	 DelayWithTimer(500);
-        	 DelayWithTimer(500);
-        	 DelayWithTimer(500);
-        	 DelayWithTimer(500);
-
-         	SetSensorLeft(0);
 
 
-        	 control_servo(182,0);
-
-          	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-
-        	 control_servo(181,0);
-
-        	 SetSensorRight(0);
-
-          	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-
-        	 control_servo(181,1);
-
-        	 SetSensorRight(1);
 
 
-          	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
-            	 DelayWithTimer(500);
+        blink_direction_vector_debug();
 
-            	 SetSensorRight(0);
+        mode=0;
 
-
-        }
+    }
 
 
 

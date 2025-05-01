@@ -11,10 +11,11 @@
 #include "sensors.h"   // Pentru prototipul read_sensors()
 #include "globals.h"   // Pentru sensor_data (declarată ca extern în globals.h)
 
-
-uint16_t viteza[4] = {1600, 1600, 1600, 1600};
-uint16_t vitezaFR[4] = {2000, 2000, 1600, 1600};
-uint16_t vitezaLR[4] = {1700, 1700, 1500, 1500};
+uint16_t STOPIE[4] = {0,0,0,0};
+uint16_t viteza[4] = {1700, 1700, 1700, 1700};
+uint16_t vitezaFR[4] = {2100, 2100, 1600, 1600};
+uint16_t vitezaLR[4] = {1800, 1800, 1500, 1500};
+uint16_t vitezaMICA[4] = {800, 800, 900, 900};
 
 
 void makeTurn(uint8_t direction_x) {
@@ -54,16 +55,18 @@ void makeTurn(uint8_t direction_x) {
 
 	    switch (direction_x) {
 	        case 0:
-	        	 move_car(0, 1, viteza); // Oprire
+	        	 move_car(2, 1, vitezaMICA);
+	        	 move_car(0, 1, STOPIE); // Oprire
+	        	 break;
 
 	        case 1:
 	            // Stop sau față — nu facem nimic
-	        	move_car(1, 5, viteza); // "1" = în față
-	            return;
+	        	move_car(1, 4, viteza); // "1" = în față
+	            break;
 
 	        case 2: // Right turn
 	        	//mutam si centram masina cu intersectia
-	        	move_car(1, 5, viteza); // "1" = în față
+	        	move_car(1, 4, viteza); // "1" = în față
 	        	//ne rotim 45 de grade
 	            move_car(8, 5, viteza); // Rotim spre dreapta
 
@@ -73,7 +76,7 @@ void makeTurn(uint8_t direction_x) {
 	            //cautam linia
 	            while(!SEE_LINE()){
 	            	//mutam fata spre dreapta
-	            	move_car(4,1,viteza);
+	            	move_car(4,1,vitezaFR);
 	            	read_sensors();
 	            }
 
@@ -81,7 +84,7 @@ void makeTurn(uint8_t direction_x) {
 
 	        case 3: // Left turn
 	        	//mutam si centram masina cu intersectia
-	        	move_car(1, 5, viteza); // "1" = în față
+	        	move_car(1, 4, viteza); // "1" = în față
 	        	//ne rotim 45 de grade
 	            move_car(7, 5, viteza); // Rotim spre stanga
 
@@ -91,7 +94,7 @@ void makeTurn(uint8_t direction_x) {
 	            //cautam linia
 	            while(!SEE_LINE()){
 	            	//mutam fata spre dreapta
-	            	move_car(3,1,viteza);
+	            	move_car(3,1,vitezaFR);
 	            	read_sensors();
 	            }
 
@@ -101,7 +104,7 @@ void makeTurn(uint8_t direction_x) {
 	        	//mutam si centram masina cu intersectia
 
 	        	//ne rotim 90 de grade
-	            move_car(8, 7, vitezaFR); // Rotim spre dreapta
+	            move_car(8, 8, vitezaFR); // Rotim spre dreapta
 
 	            read_sensors();
 
@@ -116,11 +119,11 @@ void makeTurn(uint8_t direction_x) {
 	            break;
 
 	        default:
-	            move_car(0, 1, viteza); // Oprire
+	            move_car(0,0, STOPIE); // Oprire
 	            break;
 	    }
 
-	    move_car(0, 1, viteza); // Siguranță, pentru sufletul roților
+
 	}
 
 //end of makeTurn()
@@ -230,7 +233,14 @@ void follow_next_direction() {
         }
     }
 
+
+    if (direction == 0) {
+        mode = 0;
+    }
+
     makeTurn(direction);
+
+
 }
 
 

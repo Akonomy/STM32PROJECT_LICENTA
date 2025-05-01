@@ -314,10 +314,12 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t vecto
         case 5:
         	SetSensorLeft(0);
         	set_mode(data1);
+        	break;
 
         case 6:
         	SetSensorLeft(0);
         	decode_and_save_directions(data1,data2,vector);
+        	break;
 
 
         case 7:  //signal that i received data via usart
@@ -331,10 +333,12 @@ void process_rasp_data(uint8_t type, uint8_t data1, uint8_t data2, uint8_t vecto
             SetSensorRight(1);
             DelayWithTimer(500);
             SetSensorRight(0);
+            break;
 
         case 8:
 
         	adjust_box();
+        	break;
 
 
         default:

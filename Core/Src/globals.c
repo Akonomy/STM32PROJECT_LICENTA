@@ -17,7 +17,7 @@ uint8_t sensor_data[8] = {0};
 uint8_t CROSS = 0;
 
 
-uint8_t headTo = 4;      // Default: back
+uint8_t headTo = 80;      // Default: nesetat
 
 uint8_t global_directions[MAX_DIRECTIONS] = {0};
 

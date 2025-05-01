@@ -15,6 +15,8 @@
 #include "timer.h"
 #include "sensors.h"
 
+void blink_direction_vector_debug(void);
+
 
 void convert_array_to_string(uint8_t *array, uint8_t size, char *result,
 		int result_size);

@@ -10,6 +10,40 @@
 #include <string.h>
 #include <stdint.h>
 
+void blink_direction_vector_debug(void) {
+    SetSensorRight(1);  // semnal de început
+    DelayWithTimer(500);
+    DelayWithTimer(500);
+
+    for (uint8_t i = 0; i < 8; i++) {
+        uint8_t dir = global_directions[i];
+
+        if (dir == 0) {
+            // BEEEEP - valoare zero
+            SetSensorLeft(1);
+            DelayWithTimer(500);
+            DelayWithTimer(500);
+            SetSensorLeft(0);
+        } else {
+            // Clipim rapid de 'dir' ori (1–4)
+            for (uint8_t j = 0; j < dir; j++) {
+                SetSensorLeft(1);
+                DelayWithTimer(200);
+                SetSensorLeft(0);
+                DelayWithTimer(200);
+            }
+        }
+
+        // Pauză între poziții (1 sec)
+        DelayWithTimer(500);
+        DelayWithTimer(500);
+    }
+
+    SetSensorRight(0);  // semnal de sfârșit
+}
+
+
+
 
 
 
