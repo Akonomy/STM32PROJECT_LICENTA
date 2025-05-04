@@ -73,6 +73,8 @@ int main(void)
     mode=0;
     uint16_t values[4]={2000,2000,2000,2000};
 
+    uint8_t avoid_spam=0;
+
 
 
 
@@ -115,24 +117,12 @@ int main(void)
 
     while (1)
     {
+        if (newDataFlag) {
+            parse_and_process_data();
+        }
 
-
-
-
-
-
-    	if (newDataFlag){
-    		parse_and_process_data();
-    	}
-
-
-
-
-        /* Dacă s-a detectat o intersecție (CROSS >= 1) se efectuează o virare */
-        if (CROSS >= 1 && mode != 0)
-        {
-            //makeTurn(headTo);
-        	follow_next_direction();
+        if (CROSS >= 1 && mode != 0) {
+            follow_next_direction();
             CROSS = 0;
             SetSensorRight(0);
             SetSensorLeft(0);
@@ -140,94 +130,82 @@ int main(void)
 
 
 
+        switch (mode) {
+            case 1: {
+                DriveCommand cmd = line_process();
 
+                static DriveCommand prev_cmd = {0};
+                static uint16_t same_cmd_count = 0;
+                static uint8_t protection_stage = 0;
 
-        if (mode==7){
-
-
-
-
-        blink_direction_vector_debug();
-
-        mode=0;
-
-    }
-
-
-
-
-
-
-        /* Citirea senzorilor și procesarea datelor */
-
-        if (mode == 1) {
-            // read_sensors();   /*uncomment this to read data from sensors*/
-
-            DriveCommand cmd = line_process();
-
-            // Mecanism de protecție pentru comenzi repetate
-            static DriveCommand prev_cmd = {0};       // stochează ultima comandă trimisă
-            static uint16_t same_cmd_count = 0;         // numără de câte ori a fost primit același cmd consecutiv
-            static uint8_t protection_stage = 0;        // 0: nimic, 1: SetSensorLeft(1) a fost apelată, 2: SetSensorRight(1) a fost apelată
-
-            bool same_cmd = true;
-            // Comparăm cmd.mask
-            if (cmd.mask != prev_cmd.mask) {
-                same_cmd = false;
-            } else {
-                // Comparăm vectorul de viteze pentru toate cele 4 roți
-                for (uint8_t i = 0; i < 4; i++) {
+                bool same_cmd = (cmd.mask == prev_cmd.mask);
+                for (uint8_t i = 0; i < 4 && same_cmd; i++) {
                     if (cmd.speeds[i] != prev_cmd.speeds[i]) {
                         same_cmd = false;
-                        break;
                     }
                 }
+
+                if (same_cmd) {
+                    same_cmd_count++;
+                } else {
+                    same_cmd_count = 0;
+                    protection_stage = 0;
+                    prev_cmd = cmd;
+                }
+
+                if (same_cmd_count >= 50 && protection_stage == 0) {
+                    I2C_Send_Packet(i2c_slave_address, 0x0009, values, 4);
+                    DelayWithTimer(100);
+                    protection_stage = 1;
+                } else if (same_cmd_count >= 100 && protection_stage == 1) {
+                    I2C_Send_Packet(i2c_slave_address, 0x0006, values, 4);
+                    DelayWithTimer(100);
+                    protection_stage = 2;
+                    same_cmd_count = 0;
+                }
+
+                I2C_Send_Packet(i2c_slave_address, cmd.mask, cmd.speeds, 4);
+                DelayWithTimer(50);
+                break;
             }
 
-            if (same_cmd) {
-                same_cmd_count++;
-            } else {
-                same_cmd_count = 0;
-                protection_stage = 0;
-                prev_cmd = cmd;
-            }
 
-            // Dacă aceeași comandă a fost primită de 50 de ori, apelăm SetSensorLeft(1)
-            if (same_cmd_count >= 50 && protection_stage == 0) {
+            case 3:
 
-            	I2C_Send_Packet(i2c_slave_address,0x0009, values, 4);
-            	DelayWithTimer(100);
+            	USART_Send_Byte(0xFA);
+            	mode=0;
 
-                protection_stage = 1;
-            }
-            // Dacă aceeași comandă a fost primită de 100 de ori, apelăm SetSensorRight(1)
-            // și blocăm trimiterea comenzii (resetând cmd)
-            else if (same_cmd_count >= 100 && protection_stage == 1) {
-            	I2C_Send_Packet(i2c_slave_address,0x0006, values, 4);
-            	DelayWithTimer(100);
-                protection_stage = 2;
-                same_cmd_count = 0;
-            }
+            	break;
 
-            /* ARDUINO COMMUNICATION ZONE - Nu modifica */
-            I2C_Send_Packet(i2c_slave_address, cmd.mask, cmd.speeds, 4);
 
-            DelayWithTimer(50);
+            case 5:
+            	avoid_spam++;
+
+            	if (avoid_spam >5){
+            		mode=0;
+            		avoid_spam=0;
+            	}
+
+
+            	 USART_Send_Byte(0xFA);
+            	 DelayWithTimer(500);
+
+
+            	 break;
+
+
+
+            case 7:
+                blink_direction_vector_debug();
+                mode = 0;
+                break;
+
+            // Add more modes here when you inevitably decide your robot needs to make coffee
+            default:
+                break;
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-        DelayWithTimer(5); // Întârziere înainte de următorul ciclu
+        DelayWithTimer(5);
     }
 }
 

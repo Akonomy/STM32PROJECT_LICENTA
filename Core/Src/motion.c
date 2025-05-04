@@ -13,8 +13,8 @@
 
 uint16_t STOPIE[4] = {0,0,0,0};
 uint16_t viteza[4] = {1700, 1700, 1700, 1700};
-uint16_t vitezaFR[4] = {2100, 2100, 1600, 1600};
-uint16_t vitezaLR[4] = {1800, 1800, 1500, 1500};
+uint16_t vitezaFR[4] = {2200, 2200, 1600, 1600};
+uint16_t vitezaLR[4] = {2000, 2000, 1500, 1500};
 uint16_t vitezaMICA[4] = {800, 800, 900, 900};
 
 
@@ -57,6 +57,7 @@ void makeTurn(uint8_t direction_x) {
 	        case 0:
 	        	 move_car(2, 1, vitezaMICA);
 	        	 move_car(0, 1, STOPIE); // Oprire
+	        	 mode=0;
 	        	 break;
 
 	        case 1:
@@ -114,12 +115,52 @@ void makeTurn(uint8_t direction_x) {
 					move_car(8,1,vitezaLR);
 					read_sensors();
 				}
-
-
 	            break;
+
+	        case 5: // PARCARE + pooling ca o parcat pana ii zice rasp sa taca
+	        	//mutam si centram masina cu intersectia
+
+	        	//ne rotim 90 de grade
+	            move_car(8, 8, vitezaFR); // Rotim spre dreapta
+
+	            read_sensors();
+
+	            //cautam linia
+				while(!SEE_LINE()){
+					//mutam fata spre dreapta
+					move_car(8,1,vitezaLR);
+					read_sensors();
+				}
+
+				mode=5; //parcare
+	            break;
+
+
+
+	        case 6: // PARCARE si zice un singur mesaj de confirmare
+	       	        	//mutam si centram masina cu intersectia
+
+	       	        	//ne rotim 90 de grade
+	       	            move_car(8, 8, vitezaFR); // Rotim spre dreapta
+
+	       	            read_sensors();
+
+	       	            //cautam linia
+	       				while(!SEE_LINE()){
+	       					//mutam fata spre dreapta
+	       					move_car(8,1,vitezaLR);
+	       					read_sensors();
+	       				}
+
+	       				mode=3; //parcare idle asteapta comenzi de la rasp
+	       	            break;
+
+
+
 
 	        default:
 	            move_car(0,0, STOPIE); // Oprire
+	            mode=0;
 	            break;
 	    }
 
@@ -201,7 +242,7 @@ void move_car(uint8_t direction, uint8_t tick, uint16_t speed[4]) {
 void follow_next_direction() {
     uint8_t direction = 0;
 
-    if (headTo <= 4) { // Acum acceptăm și 0 ca valid!
+    if (headTo <= 7) { // Acum acceptăm și 0 ca valid!
         if (global_directions[0] == headTo) {
             direction = headTo;
 
@@ -221,7 +262,7 @@ void follow_next_direction() {
         headTo = 255; // Folosim 255 ca „headTo inactiv” – nu ne băgăm iar în asta
     } else {
         // headTo e inactiv, deci încercăm să folosim vectorul
-        if (global_directions[0] <= 4) {
+        if (global_directions[0] <= 7) {
             direction = global_directions[0];
 
             for (uint8_t i = 0; i < MAX_DIRECTIONS - 1; i++) {
@@ -236,6 +277,10 @@ void follow_next_direction() {
 
     if (direction == 0) {
         mode = 0;
+    }
+
+    if (direction == 5){
+    	mode = 4;
     }
 
     makeTurn(direction);

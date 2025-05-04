@@ -170,18 +170,27 @@ void request_data(uint8_t sensor_type) {
     }
 
     read_sensors();
-    USART_Send_Array(sensor_data,8);
-    DelayWithTimer(200);
-    USART_Send_Array(sensor_data,8);
-    DelayWithTimer(200);
-    USART_Send_Array(sensor_data,8);
-    DelayWithTimer(500);
+
+    sensor_data[2] = 0;
+    sensor_data[5] = 0;
+    sensor_data[7] = 0;
+
+
+
+        // Trimitem marker de start
+        USART_Send_Byte(0xAA);
+
+        // Trimitem 8 octeți de date
+        USART_Send_Array(sensor_data, 8);
+
+        // Marker de sfârșit
+        USART_Send_Byte(0xBB);
+    }
 
 
 
 
 
-}
 
 
 
@@ -199,7 +208,7 @@ void request_data(uint8_t sensor_type) {
  */
 void save_next_cross_direction(uint8_t direction) {
     // Verificare parametru
-    if (direction > 4) {
+    if (direction > 7) {
         // Eroare: direcția nu este validă (trebuie să fie între 0 și 4)
         return;
     }
@@ -214,9 +223,8 @@ void save_next_cross_direction(uint8_t direction) {
 
 
 void decode_and_save_directions(uint8_t data1, uint8_t data2, uint8_t vector[4]) {
-    // Verificare: lungimea trebuie să fie în intervalul 0..MAX_DIRECTIONS.
-    if (data1 > MAX_DIRECTIONS) {
-        // Date invalide (lungime prea mare), deci ignorăm complet datele.
+    // Verificare: lungimea trebuie să fie în intervalul 0..10 (maxim 10 valori codificate pe 3 biți)
+    if (data1 > 10) {
         return;
     }
 
@@ -229,15 +237,15 @@ void decode_and_save_directions(uint8_t data1, uint8_t data2, uint8_t vector[4])
         unxored[i] = vector[i] ^ data2;
     }
 
-    // Reasamblăm cei 32 de biți din cei 4 octeți (presupunem little-endian)
+    // Reasamblăm cei 32 de biți din cei 4 octeți (little-endian)
     packed = ((uint32_t)unxored[0]) |
              (((uint32_t)unxored[1]) << 8) |
              (((uint32_t)unxored[2]) << 16) |
              (((uint32_t)unxored[3]) << 24);
 
-    // Extragem fiecare direcție (2 biți per element) și convertim din intervalul 0-3 în 1-4.
+    // Extragem fiecare direcție (3 biți per element) în intervalul 0–7
     for (i = 0; i < data1; i++) {
-        global_directions[i] = ((packed >> (2 * i)) & 0x03) + 1;
+        global_directions[i] = (packed >> (3 * i)) & 0x07;
     }
 
     // Setăm restul pozițiilor din vectorul global la 0.
@@ -249,10 +257,11 @@ void decode_and_save_directions(uint8_t data1, uint8_t data2, uint8_t vector[4])
 
 
 
-
 void set_mode(uint8_t data1){
 
 	mode=data1;
+
+
 
 
 }

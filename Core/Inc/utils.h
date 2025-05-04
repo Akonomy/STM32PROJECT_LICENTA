@@ -22,5 +22,7 @@ void convert_array_to_string(uint8_t *array, uint8_t size, char *result,
 		int result_size);
 void toBinaryString(uint8_t value, char *binary_string);
 
+void setGlobaldirections(uint8_t v1, uint8_t v2,uint8_t fill_value);
+
 
 #endif /* INC_UTILS_H_ */

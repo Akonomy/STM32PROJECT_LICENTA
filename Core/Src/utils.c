@@ -78,6 +78,17 @@ void toBinaryString(uint8_t value, char *binary_string) {
 
 
 
+void setGlobaldirections(uint8_t v1, uint8_t v2,uint8_t fill_value)
+{
+    /* 1. cele două valori “reale” */
+    global_directions[0] = v1;
+    global_directions[1] = v2;
+
+    /* 2. restul pozițiilor: FILL_VALUE */
+    for (uint8_t i = 2; i < MAX_DIRECTIONS; ++i)
+        global_directions[i] = fill_value;
+}
+
 
 
 
