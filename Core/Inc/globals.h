@@ -13,7 +13,7 @@
 
 
 
-#define MAX_DIRECTIONS 16
+#define MAX_DIRECTIONS 11
 
 
 #define TIMEOUT_DURATION 100

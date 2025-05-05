@@ -73,7 +73,6 @@ int main(void)
     mode=0;
     uint16_t values[4]={2000,2000,2000,2000};
 
-    uint8_t avoid_spam=0;
 
 
 
@@ -163,35 +162,41 @@ int main(void)
                     protection_stage = 2;
                     same_cmd_count = 0;
                 }
+                else if (same_cmd_count >= 150 && protection_stage == 2) {
+
+                    mode = 3; // intră în fallback
+                    protection_stage = 3; // nu repeta de mai multe ori
+                }
+
+
 
                 I2C_Send_Packet(i2c_slave_address, cmd.mask, cmd.speeds, 4);
                 DelayWithTimer(50);
                 break;
             }
 
-
             case 3:
 
-            	USART_Send_Byte(0xFA);
+            	USART_Send_Byte(0xDE);
+            	USART_Send_Byte(0xAD);
+            	mode=0;
+
+            	break;
+
+            case 5:
+
+            	USART_Send_Byte(0xFA); //confirmare parcare DOCK si pa pa
             	mode=0;
 
             	break;
 
 
-            case 5:
-            	avoid_spam++;
+            case 6:
 
-            	if (avoid_spam >5){
-            		mode=0;
-            		avoid_spam=0;
-            	}
+            	USART_Send_Byte(0xC8); //confirmare ok amarat ca o ajuns la zona
+            	mode=0;
 
-
-            	 USART_Send_Byte(0xFA);
-            	 DelayWithTimer(500);
-
-
-            	 break;
+            	break;
 
 
 

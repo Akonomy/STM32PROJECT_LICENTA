@@ -55,7 +55,7 @@ void makeTurn(uint8_t direction_x) {
 
 	    switch (direction_x) {
 	        case 0:
-	        	 move_car(2, 1, vitezaMICA);
+	        	 //move_car(2, 1, vitezaMICA);
 	        	 move_car(0, 1, STOPIE); // Oprire
 	        	 mode=0;
 	        	 break;
@@ -94,7 +94,7 @@ void makeTurn(uint8_t direction_x) {
 	            read_sensors();
 	            //cautam linia
 	            while(!SEE_LINE()){
-	            	//mutam fata spre dreapta
+	            	//mutam fata spre stanga
 	            	move_car(3,1,vitezaFR);
 	            	read_sensors();
 	            }
@@ -115,13 +115,15 @@ void makeTurn(uint8_t direction_x) {
 					move_car(8,1,vitezaLR);
 					read_sensors();
 				}
+
+				move_car(3,1,vitezaMICA);
 	            break;
 
-	        case 5: // PARCARE + pooling ca o parcat pana ii zice rasp sa taca
+	        case 5: // PARCARE  cu intoarcere + un mesaj amarat de ok
 	        	//mutam si centram masina cu intersectia
 
 	        	//ne rotim 90 de grade
-	            move_car(8, 8, vitezaFR); // Rotim spre dreapta
+	            move_car(8, 8, vitezaMICA); // Rotim spre dreapta
 
 	            read_sensors();
 
@@ -131,28 +133,19 @@ void makeTurn(uint8_t direction_x) {
 					move_car(8,1,vitezaLR);
 					read_sensors();
 				}
+				move_car(3,1,vitezaMICA);
 
 				mode=5; //parcare
 	            break;
 
 
 
-	        case 6: // PARCARE si zice un singur mesaj de confirmare
-	       	        	//mutam si centram masina cu intersectia
+	        case 6: // PARCARE cu stop si zice un singur mesaj de speranta
+	    	        	 move_car(2, 1, vitezaMICA);
+	    	        	 move_car(0, 1, STOPIE); // Oprire
 
-	       	        	//ne rotim 90 de grade
-	       	            move_car(8, 8, vitezaFR); // Rotim spre dreapta
 
-	       	            read_sensors();
-
-	       	            //cautam linia
-	       				while(!SEE_LINE()){
-	       					//mutam fata spre dreapta
-	       					move_car(8,1,vitezaLR);
-	       					read_sensors();
-	       				}
-
-	       				mode=3; //parcare idle asteapta comenzi de la rasp
+	       				mode=6; //parcare idle asteapta comenzi de la rasp
 	       	            break;
 
 
@@ -160,7 +153,7 @@ void makeTurn(uint8_t direction_x) {
 
 	        default:
 	            move_car(0,0, STOPIE); // Oprire
-	            mode=0;
+	            mode=3; //ceva o mers prost
 	            break;
 	    }
 
@@ -279,9 +272,6 @@ void follow_next_direction() {
         mode = 0;
     }
 
-    if (direction == 5){
-    	mode = 4;
-    }
 
     makeTurn(direction);
 
