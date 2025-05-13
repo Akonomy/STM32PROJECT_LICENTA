@@ -15,7 +15,7 @@
 uint16_t sensor_data16[3];
 uint8_t sensor_data[8] = {0};
 uint8_t CROSS = 0;
-
+uint8_t DANGER = 0;
 
 uint8_t headTo = 80;      // Default: nesetat
 

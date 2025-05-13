@@ -12,10 +12,16 @@
 #include "globals.h"   // Pentru sensor_data (declarată ca extern în globals.h)
 
 uint16_t STOPIE[4] = {0,0,0,0};
-uint16_t viteza[4] = {1700, 1700, 1700, 1700};
-uint16_t vitezaFR[4] = {2200, 2200, 1600, 1600};
-uint16_t vitezaLR[4] = {2000, 2000, 1500, 1500};
-uint16_t vitezaMICA[4] = {800, 800, 900, 900};
+uint16_t viteza[4] = {1900, 1900, 1900, 1900};
+uint16_t vitezaFR[4] = {1900, 1900, 1500, 1500};
+
+uint16_t vitezaMICA[4] = {1500, 1500, 1700, 1700};
+
+
+
+
+#define SEE_LINE() (!sensor_data[0] || !sensor_data[1] || !sensor_data[3] || !sensor_data[4] || !sensor_data[6])
+
 
 
 void makeTurn(uint8_t direction_x) {
@@ -46,12 +52,17 @@ void makeTurn(uint8_t direction_x) {
 
 
 
+	// detectăm linia cu o verificare de siguranță
+	uint8_t found_line = 0;
+	uint8_t retry_count = 0;
+
+
 
 	    // Ne pregătim pentru detectare linie
 	    read_sensors();
 
 
-	    #define SEE_LINE() (!sensor_data[0] || !sensor_data[1] || !sensor_data[3] || !sensor_data[4] || !sensor_data[6])
+
 
 	    switch (direction_x) {
 	        case 0:
@@ -62,78 +73,164 @@ void makeTurn(uint8_t direction_x) {
 
 	        case 1:
 	            // Stop sau față — nu facem nimic
-	        	move_car(1, 4, viteza); // "1" = în față
+	        	move_car(1, 1, viteza); // "1" = în față
+	        	read_sensors();
 	            break;
 
 	        case 2: // Right turn
 	        	//mutam si centram masina cu intersectia
-	        	move_car(1, 4, viteza); // "1" = în față
+	        	move_car(1, 3, viteza); // "1" = în față
 	        	//ne rotim 45 de grade
 	            move_car(8, 5, viteza); // Rotim spre dreapta
 
+	            retry_count = 0;
 
-	            //actualizam senzorii
+
 	            read_sensors();
 	            //cautam linia
-	            while(!SEE_LINE()){
-	            	//mutam fata spre dreapta
-	            	move_car(4,1,vitezaFR);
-	            	read_sensors();
+	            while ( !SEE_LINE() && retry_count<50 ) {
+	                move_car(8, 1, vitezaFR);
+	                read_sensors();
+	                retry_count++;
+	            }
+	            found_line=confirm_line_detection_or_continue(2);
+	            if (found_line){
+	            	break;
+	            }
+	            else{
+	            	retry_count=0;
+	            	  while ( !SEE_LINE() && retry_count<50 ) {
+	            		                move_car(8, 1, vitezaFR);
+	            		                read_sensors();
+	            		                retry_count++;
+	            		            }
+	            	  if(retry_count>40 && !SEE_LINE()){
+	            		  mode=3; //ceva nu a mers bine , linia s-a despawnat
+	            	  }
 	            }
 
 	            break;
+
+
+
 
 	        case 3: // Left turn
 	        	//mutam si centram masina cu intersectia
-	        	move_car(1, 4, viteza); // "1" = în față
+	        	move_car(1, 3, viteza); // "1" = în față
 	        	//ne rotim 45 de grade
 	            move_car(7, 5, viteza); // Rotim spre stanga
 
+	            retry_count = 0;
 
-	            //actualizam senzorii
+
 	            read_sensors();
 	            //cautam linia
-	            while(!SEE_LINE()){
-	            	//mutam fata spre stanga
-	            	move_car(3,1,vitezaFR);
-	            	read_sensors();
+	            while ( !SEE_LINE() && retry_count<50 ) {
+	                move_car(7, 1, vitezaFR);
+	                read_sensors();
+	                retry_count++;
+	            }
+	            found_line=confirm_line_detection_or_continue(3);
+	            if (found_line){
+	            	break;
+	            }
+	            else{
+	            	retry_count=0;
+	            	  while ( !SEE_LINE() && retry_count<50 ) {
+	            		                move_car(7, 1, vitezaFR);
+	            		                read_sensors();
+	            		                retry_count++;
+	            		            }
+	            	  if(retry_count>40 && !SEE_LINE()){
+	            		  mode=3; //ceva nu a mers bine , linia s-a despawnat
+	            	  }
 	            }
 
 	            break;
 
-	        case 4: // Back turn
-	        	//mutam si centram masina cu intersectia
 
+
+	        case 4: // Back turn
+
+
+	        	//spate si fugim de intersectia
+	        	move_car(2, 2, viteza);
 	        	//ne rotim 90 de grade
-	            move_car(8, 8, vitezaFR); // Rotim spre dreapta
+
+
+	            move_car(8, 8, viteza); // Rotim spre dreapta
+
+	            retry_count = 0;
 
 	            read_sensors();
 
-	            //cautam linia
-				while(!SEE_LINE()){
-					//mutam fata spre dreapta
-					move_car(8,1,vitezaLR);
-					read_sensors();
-				}
 
-				move_car(3,1,vitezaMICA);
+
+	            //cautam linia
+	            while ( !SEE_LINE() && retry_count<50 ) {
+	                move_car(8, 1, vitezaFR);
+	                read_sensors();
+	                retry_count++;
+	            }
+	            found_line=confirm_line_detection_or_continue(2);
+	            if (found_line){
+	            	break;
+	            }
+	            else{
+	            	retry_count=0;
+	            	  while ( !SEE_LINE() && retry_count<50 ) {
+	            		                move_car(8, 1, vitezaFR);
+	            		                read_sensors();
+	            		                retry_count++;
+	            		            }
+	            	  if(retry_count>40 && !SEE_LINE()){
+	            		  mode=3; //ceva nu a mers bine , linia s-a despawnat
+	            	  }
+	            }
+
+				//move_car(3,1,vitezaMICA);
+
 	            break;
 
-	        case 5: // PARCARE  cu intoarcere + un mesaj amarat de ok
-	        	//mutam si centram masina cu intersectia
+	        case 5: // Back turn
 
+
+	        	//spate si fugim de intersectia
+	        	move_car(2, 2, viteza);
 	        	//ne rotim 90 de grade
-	            move_car(8, 8, vitezaMICA); // Rotim spre dreapta
 
-	            read_sensors();
+	            move_car(8, 8, viteza); // Rotim spre dreapta
+
+	            retry_count = 0;
+
+
 
 	            //cautam linia
-				while(!SEE_LINE()){
-					//mutam fata spre dreapta
-					move_car(8,1,vitezaLR);
-					read_sensors();
-				}
-				move_car(3,1,vitezaMICA);
+	            read_sensors();
+	            while ( !SEE_LINE() && retry_count<50 ) {
+	                move_car(8, 1, vitezaFR);
+	                read_sensors();
+	                retry_count++;
+	            }
+	            found_line=confirm_line_detection_or_continue(2);
+	            if (found_line){
+	            	mode=5;
+	            	break;
+	            }
+	            else{
+	            	retry_count=0;
+	            	  while ( !SEE_LINE() && retry_count<50 ) {
+	            		                move_car(8, 1, vitezaFR);
+	            		                read_sensors();
+	            		                retry_count++;
+	            		            }
+	            	  if(retry_count>40 && !SEE_LINE()){
+	            		  mode=3; //ceva nu a mers bine , linia s-a despawnat
+	            	  }
+	            }
+
+				//move_car(3,1,vitezaMICA);
+
 
 				mode=5; //parcare
 	            break;
@@ -153,7 +250,7 @@ void makeTurn(uint8_t direction_x) {
 
 	        default:
 	            move_car(0,0, STOPIE); // Oprire
-	            mode=3; //ceva o mers prost
+	            mode=3; //ceva o mers prost rau de tot
 	            break;
 	    }
 
@@ -163,10 +260,192 @@ void makeTurn(uint8_t direction_x) {
 //end of makeTurn()
 
 
+uint8_t far_left_line;
+uint8_t left_line;
+uint8_t mid_line;
+uint8_t right_line;
+uint8_t far_right_line;
+
+
+void update_sensors() {
+    read_sensors();
+
+    // Update flags based on new sensor data
+    far_left_line  = !sensor_data[4];  // sensor 4: far left
+    left_line      = !sensor_data[0];  // sensor 0: left
+    mid_line       = !sensor_data[1];  // sensor 1: center
+    right_line     = !sensor_data[3];  // sensor 3: right
+    far_right_line = !sensor_data[6];  // sensor 6: far right
+}
+
+
+
+uint8_t confirm_line_detection_or_continue(uint8_t movement) {
+	uint16_t speedy[4]={1900,1900,0,0};
+	uint8_t overdose =0;
+	move_car(1,1,speedy);
+	update_sensors();
+
+
+
+
+	if(!far_left_line && !left_line && !mid_line && !right_line && !far_right_line){ //RECOVERY PHASE , no return here!!
+		//movement from move car  2 for right 3 for left
+		if(movement==2){
+
+
+			while (overdose<5){
+
+
+						overdose++;
+						move_wheel(3, 1, speedy);
+
+						update_sensors();
+						if(SEE_LINE()){
+							overdose=0;
+							break;
+						}
+					}
+
+		}
+		else if (movement==3){
+
+			while (overdose<5){
+									overdose++;
+									move_wheel(3, 1, speedy);
+
+									update_sensors();
+									if(SEE_LINE()){
+										overdose=0;
+										break;
+									}
+								}
+
+
+
+		}
+
+	}
+
+
+
+	if(mid_line){
+
+
+		//do checks for mid line then
+		while (overdose<8){
+			overdose++;
+			move_wheel(3, 1, speedy);
+
+			update_sensors();
+			if(right_line || far_right_line){
+				overdose=0;
+				break;
+			}
+		}
+
+		while (overdose<16){
+				overdose++;
+				move_wheel(4, 1, speedy);
+
+				update_sensors();
+				if(left_line || far_left_line){
+					overdose=0;
+					break;
+				}
+			}
+		while (overdose<8){
+			overdose++;
+			move_wheel(3, 1, speedy);
+
+			update_sensors();
+			if(mid_line || right_line || far_right_line){
+				overdose=0;
+				return 1;
+			}
+		}
+
+
+
+
+		return 0;
+	} //end check if start from mid line
+
+
+	// Presupunem că linia poate fi în dreapta
+	if (far_right_line || right_line  ) {
+
+		// miscare dreapta
+		while(!mid_line && !far_left_line && overdose<15){
+		overdose++;
+		move_wheel(4, 1, speedy);
+		update_sensors();
+
+		}
+		if(mid_line){
+		return 1;
+		}
+
+	}
+
+	// Dacă pare că e în stânga
+	if (far_left_line || left_line   ) {
+
+		while(!mid_line && !far_right_line && overdose<15){
+		overdose++;
+		move_wheel(3, 1, speedy);
+		update_sensors();
+
+		}
+
+		if(mid_line){
+		return 1;
+		}
+
+	}
+
+
+
+	if (!far_left_line && !left_line && !mid_line && !right_line && !far_right_line) {
+		// Muscă confirmed. Linia nu există.
+		return 0;
+	}
+
+	// Dacă totul e ok
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 void move_car(uint8_t direction, uint8_t tick, uint16_t speed[4]) {
+
+	/*ATENTIE SINCE FUNCTIA ASTA E FOLOSITA INTERN  EA NU ARE PROTECTIE LA DIRECTII GRESITE SAU TIKS INFINIT
+	 * pentru a mari viteza de procesare s-a renuntat la verificari asa ca respecta :
+
+	MAX DIRECTIONS  20 IAR TICKS NU DEPASI 30
+
+	A
+
+
+	*/
+
 
 	   SetSensorRight(1);
 
@@ -177,16 +456,6 @@ void move_car(uint8_t direction, uint8_t tick, uint16_t speed[4]) {
 		 I2C_Send_Packet(i2c_slave_address,0x0000 ,0, 4);
 		 return;
 	}
-    if (direction > 20) {
-        // Eroare: direcția este în afara intervalului permis (0-12)
-    	SetSensorLeft(1);
-        return;
-    }
-    if (tick>30) {
-    	SetSensorLeft(1);
-        // Eroare: tick-ul este în afara intervalului permis (1-10)
-        return;
-    }
 
 
 
@@ -228,6 +497,44 @@ void move_car(uint8_t direction, uint8_t tick, uint16_t speed[4]) {
     SetSensorRight(0);
     SetSensorLeft(0);
 }
+
+
+
+
+void move_wheel(uint8_t direction, uint8_t tick, uint16_t speed[4]) {
+
+	   SetSensorRight(1);
+
+    // Verificare parametri   0 e roata dreapta 2 e roata stanga
+
+
+
+
+    	for (uint8_t x = 0; x < tick; x++) {
+    			SetSensorRight(0);
+
+    			 I2C_Send_Packet(i2c_slave_address, directii_implicite[direction] , speed, 4);
+    			 DelayWithTimer(69);
+    			 SetSensorRight(1);
+    }
+
+
+
+
+
+
+	 I2C_Send_Packet(i2c_slave_address, 0x0000,0, 4);
+
+
+    SetSensorRight(0);
+    SetSensorLeft(0);
+}
+
+
+
+
+
+
 
 
 

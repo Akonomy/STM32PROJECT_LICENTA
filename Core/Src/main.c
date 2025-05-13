@@ -68,11 +68,11 @@ int main(void)
 
 
 
-    //DON"T RUN WITH MODE = 1 IN PRODUCTION , this is for debug only, mode should be set by raspberry py
-
+    //DON"T RUN WITH MODE = 1  or other modes IN PRODUCTION , this is for debug only, mode should be set by raspberry py
+	//MODE 0 is default, is safe and nice
     mode=0;
-    uint16_t values[4]={2000,2000,2000,2000};
-
+    uint16_t values[4]={2200,2200,2000,2000};
+    uint8_t danger_count;
 
 
 
@@ -105,7 +105,8 @@ int main(void)
 
     /* Infinite loop */
 
-
+    mode=8;
+    danger_count=0;
 
 
 
@@ -125,6 +126,35 @@ int main(void)
             CROSS = 0;
             SetSensorRight(0);
             SetSensorLeft(0);
+        }
+
+
+        if (DANGER>=1){
+        	while(DANGER){
+
+
+        	read_sensors();
+
+        	if (sensor_data16[0] <1000 || sensor_data16[2] <1000){
+
+        		DelayWithTimer(100);
+        		danger_count++;
+
+        	}
+        	else{
+        		danger_count=0;
+        		DANGER=0;
+
+        	}
+
+
+
+        	if(danger_count>=100){
+        		mode=2;
+        		danger_count=0;
+        	}
+
+        	}
         }
 
 
@@ -161,8 +191,9 @@ int main(void)
                     DelayWithTimer(100);
                     protection_stage = 2;
                     same_cmd_count = 0;
+
                 }
-                else if (same_cmd_count >= 150 && protection_stage == 2) {
+                else if (same_cmd_count >= 25 && protection_stage == 2) {
 
                     mode = 3; // intră în fallback
                     protection_stage = 3; // nu repeta de mai multe ori
@@ -171,9 +202,13 @@ int main(void)
 
 
                 I2C_Send_Packet(i2c_slave_address, cmd.mask, cmd.speeds, 4);
-                DelayWithTimer(50);
+                DelayWithTimer(30);
                 break;
             }
+            case 2:
+            	USART_Send_Byte(0xDA);
+            	mode=0;
+            	break;
 
             case 3:
 
@@ -205,12 +240,19 @@ int main(void)
                 mode = 0;
                 break;
 
+            case 8:
+            	read_sensors();
+
+            	break;
+
+
+
             // Add more modes here when you inevitably decide your robot needs to make coffee
             default:
                 break;
         }
 
-        DelayWithTimer(5);
+
     }
 }
 

@@ -53,7 +53,7 @@ void read_sensors() {
             }
 
             // Delay mic pentru stabilitate
-            DelayWithTimer(2);
+            DelayWithTimer(1);
         }
     }
 }
@@ -92,6 +92,26 @@ DriveCommand line_process(void) {
 
     // Actualizează vectorul global de senzori
     read_sensors();
+    //verificare senzori_siguranta
+
+    if(sensor_data16[0]<1000 || sensor_data16[2]<1000){
+
+
+            DANGER = 1;
+            cmd.mask = 0x0000;
+            for (uint8_t i = 0; i < 4; i++) {
+                speed[i] = 0;
+            }
+            return cmd;
+        } else {
+            DANGER = 0;
+
+
+
+
+
+
+    }
 
     // Citim senzorii de linie (senzor activ = detectează linia → valoare 1)
     uint8_t far_left_line  = !sensor_data[4];  // senzor stânga-extrem
