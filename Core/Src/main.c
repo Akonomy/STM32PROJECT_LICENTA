@@ -212,6 +212,7 @@ int main(void)
 
             case 3:
 
+
             	USART_Send_Byte(0xDE);
             	USART_Send_Byte(0xAD);
             	mode=0;
@@ -233,8 +234,6 @@ int main(void)
 
             	break;
 
-
-
             case 7:
                 blink_direction_vector_debug();
                 mode = 0;
@@ -245,9 +244,32 @@ int main(void)
 
             	break;
 
+            case 9:
+            	mode=0;
+            	go_back(9);
+
+            	break;
+
+            case 10:
+            	mode=0;
+            	go_back(10);
+
+            	break;
+
+            case 11:  // aici cand cauta linia si stuff
+            	read_sensors();
+            	if SEE_LINE(){
+            	USART_Send_Byte(0xAF);
+
+            	}
 
 
-            // Add more modes here when you inevitably decide your robot needs to make coffee
+
+
+            	break;
+
+
+            // Space for more modes when you inevitably decide your robot needs to make coffee
             default:
                 break;
         }

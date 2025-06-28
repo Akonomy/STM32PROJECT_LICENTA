@@ -61,6 +61,13 @@
 
 
 //---------------------------< END DIRECTII >-----------------------------------------//
+//return true is he see the line
+#define SEE_LINE() (!sensor_data[0] || !sensor_data[1] || !sensor_data[3] || !sensor_data[4] || !sensor_data[6])
+
+
+
+
+
 
 extern uint16_t sensor_data16[3];
 extern uint8_t sensor_data[8];   // Array pentru citirile senzorilor

@@ -12,15 +12,15 @@
 #include "globals.h"   // Pentru sensor_data (declarată ca extern în globals.h)
 
 uint16_t STOPIE[4] = {0,0,0,0};
-uint16_t viteza[4] = {1900, 1900, 1900, 1900};
-uint16_t vitezaFR[4] = {1900, 1900, 1500, 1500};
+uint16_t viteza[4] = {1990, 1990, 1990, 1990};
+uint16_t vitezaFR[4] = {2290, 2290, 1690, 1690};
 
-uint16_t vitezaMICA[4] = {1500, 1500, 1700, 1700};
-
-
+uint16_t vitezaMICA[4] = {1590, 1590, 1790, 1790};
 
 
-#define SEE_LINE() (!sensor_data[0] || !sensor_data[1] || !sensor_data[3] || !sensor_data[4] || !sensor_data[6])
+
+
+
 
 
 
@@ -258,6 +258,129 @@ void makeTurn(uint8_t direction_x) {
 	}
 
 //end of makeTurn()
+
+
+
+
+
+
+
+///new function to go back to path
+
+
+
+
+
+void go_back(uint8_t last_direction_x) {
+
+	uint8_t found_line = 0;
+	uint8_t retry_count = 0;
+
+	    // Ne pregătim pentru detectare linie
+	    read_sensors();
+
+
+
+
+
+
+	        	//ne rotim 90 de grade
+
+	        	if(last_direction_x==9){
+
+
+	            move_car(8, 16, viteza); // Rotim spre dreapta
+
+	            retry_count = 0;
+
+
+
+	            //cautam linia
+	            read_sensors();
+	            while ( !SEE_LINE() && retry_count<16 ) {
+	                move_car(8, 1, vitezaFR);
+	                read_sensors();
+	                retry_count++;
+	            }
+	            found_line=confirm_line_detection_or_continue(2);
+	            if (found_line){
+	            	mode=5;
+
+	            }
+	            else{
+	            	retry_count=0;
+	            	  while ( !SEE_LINE() && retry_count<16 ) {
+	            		                move_car(8, 1, vitezaFR);
+	            		                read_sensors();
+	            		                retry_count++;
+	            		            }
+	            	  if(retry_count>16 && !SEE_LINE()){
+	            		  mode=3; //ceva nu a mers bine , linia s-a despawnat
+	            	  }
+	            }
+
+				//move_car(3,1,vitezaMICA);
+
+
+				mode=5; //parcare
+
+
+	        	}
+
+	        	else if(last_direction_x==10){
+
+
+
+		            move_car(7, 16, viteza); // Rotim spre dreapta
+
+		            retry_count = 0;
+
+
+
+		            //cautam linia
+		            read_sensors();
+		            while ( !SEE_LINE() && retry_count<16 ) {
+		                move_car(7, 1, vitezaFR);
+		                read_sensors();
+		                retry_count++;
+		            }
+		            found_line=confirm_line_detection_or_continue(3);
+		            if (found_line){
+		            	mode=5;
+
+		            }
+		            else{
+		            	retry_count=0;
+		            	  while ( !SEE_LINE() && retry_count<16 ) {
+		            		                move_car(7, 1, vitezaFR);
+		            		                read_sensors();
+		            		                retry_count++;
+		            		            }
+		            	  if(retry_count>40 && !SEE_LINE()){
+		            		  mode=3; //ceva nu a mers bine , linia s-a despawnat
+		            	  }
+		            }
+
+					//move_car(3,1,vitezaMICA);
+
+
+					mode=5; //parcare
+
+
+
+	        	}
+
+
+
+
+
+	    }
+
+
+
+
+
+
 
 
 uint8_t far_left_line;
