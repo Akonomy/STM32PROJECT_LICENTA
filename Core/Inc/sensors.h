@@ -18,7 +18,7 @@
 
 
 // Definirea vitezei de bază și a ajustărilor (modificabile după nevoie)
-#define BASE_SPEED 1300
+#define BASE_SPEED 1100
 static const uint16_t small_adjust = 250;
 static const uint16_t mid_adjust   = 500;
 static const uint16_t high_adjust  = 1000;

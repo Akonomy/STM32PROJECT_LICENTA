@@ -71,7 +71,7 @@ int main(void)
     //DON"T RUN WITH MODE = 1  or other modes IN PRODUCTION , this is for debug only, mode should be set by raspberry py
 	//MODE 0 is default, is safe and nice
     mode=0;
-    uint16_t values[4]={2200,2200,2000,2000};
+    uint16_t values[4]={2400,2400,2000,2000};
     uint8_t danger_count;
 
 
@@ -215,6 +215,9 @@ int main(void)
 
             	USART_Send_Byte(0xDE);
             	USART_Send_Byte(0xAD);
+            	DelayWithTimer(1000);
+            	USART_Send_Byte(0xDE);
+            	USART_Send_Byte(0xAD);
             	mode=0;
 
             	break;
@@ -229,8 +232,8 @@ int main(void)
 
             case 6:
 
-            	USART_Send_Byte(0xC8); //confirmare ok amarat ca o ajuns la zona
-            	mode=0;
+            	USART_Send_Byte(0xC8); // 200 confirmare ok amarat ca o ajuns la zona
+            	DelayWithTimer(100);
 
             	break;
 
@@ -256,17 +259,25 @@ int main(void)
 
             	break;
 
-            case 11:  // aici cand cauta linia si stuff
-            	read_sensors();
-            	if SEE_LINE(){
-            	USART_Send_Byte(0xAF);
-
-            	}
 
 
 
 
-            	break;
+
+            case 11:  // când caută linia și alte acrobații
+                read_sensors();
+                {
+                    uint8_t sensor_mask = 0;
+
+                    if (!sensor_data[0]) sensor_mask |= (1 << 0); // left
+                    if (!sensor_data[1]) sensor_mask |= (1 << 1); // mid
+                    if (!sensor_data[3]) sensor_mask |= (1 << 3); // right
+                    if (!sensor_data[4]) sensor_mask |= (1 << 4); // far left
+                    if (!sensor_data[6]) sensor_mask |= (1 << 6); // far right
+
+                    USART_Send_Byte(sensor_mask);
+                }
+                break;
 
 
             // Space for more modes when you inevitably decide your robot needs to make coffee

@@ -12,8 +12,8 @@
 #include "globals.h"   // Pentru sensor_data (declarată ca extern în globals.h)
 
 uint16_t STOPIE[4] = {0,0,0,0};
-uint16_t viteza[4] = {1990, 1990, 1990, 1990};
-uint16_t vitezaFR[4] = {2290, 2290, 1690, 1690};
+uint16_t viteza[4] = {1890, 1890, 1890, 1890};
+uint16_t vitezaFR[4] = {2190, 2190, 1590, 1590};
 
 uint16_t vitezaMICA[4] = {1590, 1590, 1790, 1790};
 
@@ -158,7 +158,7 @@ void makeTurn(uint8_t direction_x) {
 	        	//ne rotim 90 de grade
 
 
-	            move_car(8, 8, viteza); // Rotim spre dreapta
+	            move_car(8, 10, viteza); // Rotim spre dreapta
 
 	            retry_count = 0;
 
@@ -289,7 +289,7 @@ void go_back(uint8_t last_direction_x) {
 	        	if(last_direction_x==9){
 
 
-	            move_car(8, 16, viteza); // Rotim spre dreapta
+	            move_car(8, 10, viteza); // Rotim spre dreapta
 
 	            retry_count = 0;
 
@@ -331,7 +331,7 @@ void go_back(uint8_t last_direction_x) {
 
 
 
-		            move_car(7, 16, viteza); // Rotim spre dreapta
+		            move_car(7, 10, viteza); // Rotim spre dreapta
 
 		            retry_count = 0;
 
