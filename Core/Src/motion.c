@@ -10,6 +10,7 @@
 #include "timer.h"
 #include "sensors.h"   // Pentru prototipul read_sensors()
 #include "globals.h"   // Pentru sensor_data (declarată ca extern în globals.h)
+#include "usart.h"
 
 uint16_t STOPIE[4] = {0,0,0,0};
 uint16_t viteza[4] = {1890, 1890, 1890, 1890};
@@ -68,6 +69,8 @@ void makeTurn(uint8_t direction_x) {
 	        case 0:
 	        	 //move_car(2, 1, vitezaMICA);
 	        	 move_car(0, 1, STOPIE); // Oprire
+	        	 USART_Send_Byte(0x30);
+
 	        	 mode=0;
 	        	 break;
 

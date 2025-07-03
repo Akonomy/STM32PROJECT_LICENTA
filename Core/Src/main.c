@@ -232,8 +232,8 @@ int main(void)
 
             case 6:
 
-            	USART_Send_Byte(0xC8); // 200 confirmare ok amarat ca o ajuns la zona
-            	DelayWithTimer(100);
+            	USART_Send_Byte(0xC8); // 48 confirmare ok amarat ca o ajuns la zona
+            	DelayWithTimer(1000);
 
             	break;
 

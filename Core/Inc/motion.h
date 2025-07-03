@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 
-
+void go_back(uint8_t last_direction_x);
 
 void update_sensors();
 
